@@ -1,5 +1,6 @@
 //Advent of code day 1 part 1 - grab first and last number from a string
-//concatenate the two in order and reutrn a two-digit number
+//concatenate the two in order and reutrn a two-digit number. Repeat for list of 
+//many strings and sum all two digit numbers for answer.
 
 use std::fs::read_to_string;
 use std::io;
