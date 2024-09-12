@@ -1,11 +1,20 @@
-//Advent of code day 1 part 1 - grab first and last number from a string
+//Advent of code day 1 part 2 - grab first and last number from a string
 //concatenate the two in order and reutrn a two-digit number. Repeat for list of 
-//many strings and sum all two digit numbers for answer.
+//many strings and sum all two digit numbers for answer. 
+//Part 2 particulars: some numbers are written as "one" "two" etc. These also count
 
 use std::fs::read_to_string;
+use std::io;
 
 fn main() {
-    let path = "./data/day_1_1";
+    println!("Please enter filepath to list of bungled calibration values");
+    
+    let mut path = String::new();
+    io::stdin()
+        .read_line(&mut path)
+        .expect("Failed to read line");
+        
+    let path = path.trim();
 
     let data = get_list_from_file(path);
     let mut cal_val = Vec::new();
