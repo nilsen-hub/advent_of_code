@@ -21,7 +21,7 @@ fn main() {
                 count_index += 1;
             }
             println!(" ");
-            if is_part == true{
+            if is_part{
                 value_accumulator += make_number(prt_number, &flattened);
                 print!(" is a part!");
                 println!(" ");
@@ -50,7 +50,7 @@ fn make_number(input:Vec<usize>, data:&Vec<char>) -> u32{
 
 fn kernel_analysis(nums:&Vec<usize>, data:&Vec<char>, len:usize, boundry:usize) -> bool {
     for i in nums{
-        if is_edge(i, len, boundry) == true {
+        if is_edge(i, len, boundry){
             let kernel1:Vec<usize> = edge_demystifier(*i, len, boundry);
             for e in kernel1{
                 if is_symbol(data[e]){
@@ -187,22 +187,6 @@ fn is_edge(index: &usize, len:usize, boundry:usize) -> bool {
             }
         }
     
-    false
-}
-
-fn is_corner(index: usize, len:usize, boundry:usize) -> bool {
-    let corner_list:Vec<bool> = vec![
-        index == 0,
-        (index as i32) - (len as i32) < 0 && index % len == len - 1,
-        index % len == 0 && index + len >= boundry,
-        index + 1 >= boundry];
-   
-        for e in corner_list{
-        if e{
-            return true
-        }
-    }
-
     false
 }
 
