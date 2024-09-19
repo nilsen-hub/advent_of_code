@@ -49,16 +49,17 @@ fn make_number(input:Vec<usize>, data:&Vec<char>) -> u32{
 }
 
 fn kernel_analysis(nums:&Vec<usize>, data:&Vec<char>, len:usize, boundry:usize) -> bool {
+    let mut kernel:Vec<usize>;
     for i in nums{
         if is_edge(i, len, boundry){
-            let kernel1:Vec<usize> = edge_demystifier(*i, len, boundry);
-            for e in kernel1{
+            kernel = edge_demystifier(*i, len, boundry);
+            for e in kernel{
                 if is_symbol(data[e]){
                     return true
                 }
             }
         } else {
-            let kernel:Vec<usize> = vec![
+            kernel = vec![
                 i-1,
                 i-(len - 1),
                 i-len,
