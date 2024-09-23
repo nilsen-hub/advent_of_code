@@ -16,11 +16,10 @@ fn main() {
         if c.is_numeric(){
             let prt_number = number_cat(count_index, &flattened, row_len);
             let is_part = kernel_analysis(&prt_number, &flattened, row_len, boundry);
-            for c in &prt_number{
+            for _c in &prt_number{
                 print!("{}", &flattened[count_index]);
                 count_index += 1;
             }
-            println!(" ");
             if is_part{
                 value_accumulator += make_number(prt_number, &flattened);
                 print!(" is a part!");
@@ -49,17 +48,16 @@ fn make_number(input:Vec<usize>, data:&Vec<char>) -> u32{
 }
 
 fn kernel_analysis(nums:&Vec<usize>, data:&Vec<char>, len:usize, boundry:usize) -> bool {
-    let mut kernel:Vec<usize>;
     for i in nums{
         if is_edge(i, len, boundry){
-            kernel = edge_demystifier(*i, len, boundry);
+            let kernel:Vec<usize> = edge_demystifier(*i, len, boundry);
             for e in kernel{
                 if is_symbol(data[e]){
                     return true
                 }
             }
         } else {
-            kernel = vec![
+            let kernel:Vec<usize> = vec![
                 i-1,
                 i-(len - 1),
                 i-len,
