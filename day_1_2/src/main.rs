@@ -16,6 +16,7 @@ fn main() {
         let val = grab_number(translated_string);
         cal_val.push(val);
     }
+
     let output = sum_vector(cal_val);
     println!("{output}");
 }
