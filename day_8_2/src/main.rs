@@ -108,14 +108,13 @@ fn step_synchronizer(path_lengths: Vec<usize>) {
         if index > len {
             index = 0;
         }
-        if output_vec[0] == output_vec[1] && output_vec[2] == output_vec[3] {
+        if output_vec[0] == output_vec[1] {
             if output_vec.iter().min() == output_vec.iter().max() {
                 break;
             }
         }
     }
     println!("{} in {} seconds", output_vec[0], now.elapsed().as_secs(),);
-    //arr.iter().min() == arr.iter().max()
 }
 fn get_factors(mut number: i128) -> Vec<i128> {
     /* Stole this algo from:
