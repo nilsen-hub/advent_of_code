@@ -69,6 +69,7 @@ fn parser(full_data: &Vec<String>) -> Vec<(Vec<u32>, u32)> {
     output
 }
 fn card_analyzer(cards: &Vec<u32>) -> String {
+    
     let mut hand_map: HashMap<u32, u8> = HashMap::with_capacity(5);
     let mut hand_type_chars: Vec<char> = Vec::with_capacity(5);
     for el in cards {

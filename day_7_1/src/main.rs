@@ -8,6 +8,16 @@ enum HandValue {
     Onepair,   // 2111
     HighCard,  // 11111
 }
+
+impl HandValue {
+    fn value(&self) -> String {
+        match *self {
+            Self::FiveKind => "5".to_owned(),
+            _ => "test".to_owned(),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 struct Hand {
     cards: Vec<u32>,
@@ -18,6 +28,7 @@ struct Hand {
 fn main() {
     let path = "./data/day7";
     let full_data = get_list_from_file(path);
+    let five = HandValue::FiveKind.value();
     let parsed = parser(&full_data);
     let mut hands: Vec<Hand> = Vec::with_capacity(1000);
     let mut value_accumulator: u32 = 0;
@@ -113,43 +124,19 @@ fn sorting_1st(data: Vec<Hand>) -> Vec<Hand> {
             _ => println!("Something went wrong in sorting_1st"),
         }
     }
-
-    five.sort_by_key(|x| x.cards.clone());
-    four.sort_by_key(|x| x.cards.clone());
-    house.sort_by_key(|x| x.cards.clone());
-    three.sort_by_key(|x| x.cards.clone());
-    twopair.sort_by_key(|x| x.cards.clone());
-    pair.sort_by_key(|x| x.cards.clone());
-    high.sort_by_key(|x| x.cards.clone());
-
-    five.reverse();
-    four.reverse();
-    house.reverse();
-    three.reverse();
-    twopair.reverse();
-    pair.reverse();
-    high.reverse();
-
-    for el in five {
-        sorted_hands.push(el);
-    }
-    for el in four {
-        sorted_hands.push(el);
-    }
-    for el in house {
-        sorted_hands.push(el);
-    }
-    for el in three {
-        sorted_hands.push(el);
-    }
-    for el in twopair {
-        sorted_hands.push(el);
-    }
-    for el in pair {
-        sorted_hands.push(el);
-    }
-    for el in high {
-        sorted_hands.push(el);
+    //[five, four, house, three, twopair, pair, high].into_iter().for_each(|mut vec|{
+    //    vec.sort_by_key(|x| x.cards.clone());
+    //    vec.reverse();
+    //    for el in vec{
+    //        sorted_hands.push(el);
+    //    }         
+    //});
+    for mut vec in[five, four, house, three, twopair, pair, high]{
+        vec.sort_by_key(|x| x.cards.clone());
+        vec.reverse();
+        for el in vec{
+            sorted_hands.push(el);
+        } 
     }
 
     sorted_hands.reverse();
