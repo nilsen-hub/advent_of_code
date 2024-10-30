@@ -73,7 +73,7 @@ fn OASIS_predictor(data:&Vec<i32>) -> i32{
             data_vec = work_vec;
             work_vec = Vec::new();
 
-            // reset index, update bounddry
+            // reset index, update boundry
             index = 0;
             bound -= 1;
         }
