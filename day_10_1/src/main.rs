@@ -108,11 +108,15 @@ fn bootstraps(data: &Vec<Vec<char>>) {
     let mut current: char = '0';
     let mut last: char = '0';
     let mut coord: (usize, usize) = (0, 0);
+
+    let north: [char; 3] =['F', '7', '|']
+    let east: [char; 3] = ['7','J','-']
+
     for (idx, loc) in checks.iter().enumerate() {
         let symbol: char = data[loc.0][loc.1];
         match idx {
             0 => {
-                if symbol == 'F' | '7' | '|' {
+                if north.contains(symbol){
                     // valid north
                     coord = loc.clone();
                     last = '|';
@@ -121,22 +125,18 @@ fn bootstraps(data: &Vec<Vec<char>>) {
                 }
             }
             1 => {
-                if symbol == '7' | 'J' | '-' {
+                if east.contains(symbol){
                     // valid east
                     coord = loc.clone();
                     last = '-';
                     current = symbol.clone();
                 }
             }
-        }
-        if idx == 0 {
-            if symbol == 'F' | '7' | '|' {
-                // valid north
-                coord = loc.clone();
-                last = '|';
-                current = symbol.clone();
-                break;
-            }
+            _ => { coord = loc.clone();
+                    last = '|';
+                    current = symbol.clone();
+
+            } 
         }
     }
 
