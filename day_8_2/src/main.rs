@@ -50,7 +50,7 @@ fn pathfinder(guide: Guide) -> Vec<usize> {
         let mut steps: usize = 0;
         let mut index: usize = 0;
         let mut position = el;
-        //print!("{} -> ", position);
+        print!("{} -> ", position);
         loop {
             let forward = guide.map.get(&position).unwrap();
             if guide.directions[index] == 'L' {
@@ -66,15 +66,14 @@ fn pathfinder(guide: Guide) -> Vec<usize> {
             steps += 1;
             if position.chars().last().unwrap() == 'Z' {
                 step_vector.push(steps);
-                //print!("{} in {} steps", position, steps);
-                //println!(" ");
+                print!("{} in {} steps", position, steps);
+                println!(" ");
                 break;
             }
         }
     }
 
     step_vector
-    //println!("{} steps have been stepped!", final_steps);
 }
 fn get_starting_pos(map: &HashMap<String, (String, String)>) -> Vec<String> {
     let mut output: Vec<String> = Vec::new();
@@ -120,7 +119,6 @@ fn get_factors(mut number: i128) -> Vec<i128> {
     /* Stole this algo from:
     https://rustp.org/number-theory/prime-factorization-of-a-number/
     and modified to output to vector */
-
     let mut prime_factors: Vec<i128> = Vec::new();
 
     // Step 1 : Divide by 2
@@ -158,7 +156,6 @@ fn get_factors(mut number: i128) -> Vec<i128> {
     if number > 1 {
         prime_factors.push(number);
     }
-
     return prime_factors;
 }
 fn solution_factory(numbers: Vec<usize>) -> i128 {
@@ -172,7 +169,9 @@ fn solution_factory(numbers: Vec<usize>) -> i128 {
         }
     }
     for factor in all_factors {
+        print!("{}, ", factor);
         least_common_multiplier = least_common_multiplier * factor;
     }
+    println!("");
     least_common_multiplier
 }

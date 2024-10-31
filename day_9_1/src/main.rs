@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 use std::{
     fs::read_to_string,
     time::Instant,
@@ -111,3 +112,28 @@ mod tests {
         assert_eq!(expected_3, result_3);
     }
 }
+=======
+use std::fs::read_to_string;
+fn main() {
+    // Get the dataset, return as vector of strings representing the lines of
+    // the file
+    let path = "./data/day9T";
+    let full_parsed_data = 
+
+    // Parse dataset into vector "parsed" of vec<i32>, i32 to account
+    // for negative values
+    // Pass parsed, index by index, into "predictor" function to do
+    // required analysis.
+    // Accumulate predictions into value_accumulator and output final
+    // result to console.
+}
+
+fn get_list_from_file(path: &str) -> Vec<i32> {
+    let output:Vec<Vec<i32>> = 
+    read_to_string(path)
+        .unwrap()
+        .lines()
+        .map()
+        .collect()
+}
+>>>>>>> Stashed changes
