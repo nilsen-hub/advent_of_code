@@ -38,7 +38,7 @@ Truth-table
 */
 
 #[derive(Debug)]
-struct location {
+struct Location {
     Coord: (usize, usize),
     Current: char,
     Last: char,
@@ -50,12 +50,13 @@ fn main() {
     let full_data = get_list_from_file(path);
     // parse file into vec<vec<char>>
     let parsed = parse(full_data);
+    step_counter(&parsed);
     //load parsed data into step_counter()
     //get amount of steps to complete circuit, divide by 2 and output
 }
 fn step_counter(data: &Vec<Vec<char>>) { // -> i32
-                                         // assign 0 to mut step counter
-                                         // find start Location by pulling your boostraps()
+    let mut step_counter = 0;       // assign 0 to mut step counter
+    let location = bootstraps(data); // find start Location by pulling your boostraps()
                                          // start walk-loop.
                                          // increment step counter
                                          // get the next location from pathfinder()
@@ -77,17 +78,37 @@ fn pathfinder(mut location: &Location, data: &Vec<Vec<char>>) { // -> Location
                                                                 // return output
 }
 fn bootstraps(data: &Vec<Vec<char>>) { // -> Location
-                                       // find 'S' in data, store index, probably use
-                                       // enumerated for-loop for this, inefficient but yields
-                                       // clean index value.
-                                       // start north of 'S'and go around the clock looking for valid
-                                       // symbols using this table:
-                                       // valid_north == 'F', '7', '|'
-                                       // valid east == '7'. 'J', '-'
-                                       // if north is valid, assume 'S' is '|'
-                                       // if east is valid, assume 'S' is '-'
-                                       // if neither are valid, assume 'S' is '|'
-                                       // assemble location{} descriptor and return
+    // find 'S' in data, store index, probably use
+    // enumerated for-loop for this, inefficient but yields
+    // clean index value.
+    let mut index:(usize, usize) = (0,0);
+   'get_index: for (index_row, el1) in data.iter().enumerate(){
+        for (index_col, el2) in el1.iter().enumerate(){
+            if *el2 == 'S'{
+                index = (index_row, index_col);
+                break 'get_index; 
+            }
+        }
+    }
+    // define north and east relative to S
+    let checks:[(usize, usize); 2]  = [(index.0 - 1, index.1),(index.0, index.1 + 1)];
+    // start north of 'S'and go around the clock looking for valid
+    // symbols using this table:
+    // valid_north == 'F', '7', '|'
+    // valid east == '7'. 'J', '-'
+    for (idx, loc) in checks.iter().enumerate(){
+        let symbol = data[loc.0][loc.1];
+        if idx == 0{
+            if symbol == 'F'|'7'|'|'{
+                
+            }
+    }
+
+
+    // if north is valid, assume 'S' is '|'
+    // if east is valid, assume 'S' is '-'
+    // if neither are valid, assume 'S' is '|'
+    // assemble location{} descriptor and return
 }
 fn get_list_from_file(path: &str) -> Vec<String> {
     read_to_string(path)
