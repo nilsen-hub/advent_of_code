@@ -18,6 +18,7 @@ Truth-table
     .L-J.
     .....
 
+
     Pairs:
     ('7','L') = east/north
     ('L','7') = west/south
@@ -59,26 +60,30 @@ struct Location {
 }
 
 fn main() {
+    let now = Instant::now();
     // load data from file
     let path = "./data/day10";
     let full_data = get_list_from_file(path);
     // parse file into vec<vec<char>>
     let parsed = parse(full_data);
-    let solution = step_counter(&parsed);
+    let solution = step_recorder(&parsed);
     //load parsed data into step_counter()
     //get amount of steps to complete circuit, divide by 2 and output
-    println!("{}", solution / 2);
+    println!(
+        "The halfway point of the pipe is {} steps from the origin",
+        solution / 2
+    );
+    println!("program runtime: {}", now.elapsed().as_micros());
 }
-fn step_counter(data: &Vec<Vec<char>>) -> i32 {
+fn step_recorder(data: &Vec<Vec<char>>) -> i32 {
     // find start Location by pulling your boostraps()
     let mut location = bootstraps(data);
     // initialize step counter with 1 to account for first step in bootstrap
     let mut step_counter = 1;
-    println!("{:#?}", location);
     // start walk-loop.
     loop {
         // get the next location from pathfinder()
-        location = pathfinder(&location, data);
+        location = pathfinder(&location, &data);
         step_counter += 1;
         // if location.current == 'S', break loop
         if location.current == 'S' {
@@ -201,11 +206,10 @@ fn bootstraps(data: &Vec<Vec<char>>) -> Location {
         }
     }
     // define north, east and south, relative to S
-    let checks: [(usize, usize); 4] = [
+    let checks: [(usize, usize); 3] = [
         (index.0 - 1, index.1), // north
         (index.0, index.1 + 1), // east
         (index.0 + 1, index.1), // south
-        (index.0, index.1 - 1), // west
     ];
     // start north of 'S'and go around the clock looking for valid
     // symbols.
@@ -272,7 +276,7 @@ fn get_list_from_file(path: &str) -> Vec<String> {
         .collect()
 }
 fn parse(data: Vec<String>) -> Vec<Vec<char>> {
-    let mut output: Vec<Vec<char>> = Vec::new();
+    let mut output: Vec<Vec<char>> = Vec::with_capacity(500);
     for string in data {
         let chars: Vec<char> = string.chars().collect();
         output.push(chars);

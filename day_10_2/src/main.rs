@@ -64,18 +64,52 @@ fn main() {
     let full_data = get_list_from_file(path);
     // parse file into vec<vec<char>>
     let parsed = parse(full_data);
-    let drawing = parsed.clone();
-    let solution = step_counter(&parsed);
-    //picasso(&drawing, &solution.1);
+    let solution = step_recorder(&parsed);
+    let enclosed = count_enclosed(&parsed, &solution.1);
     //load parsed data into step_counter()
     //get amount of steps to complete circuit, divide by 2 and output
-    println!("{}", solution.0 / 2);
+    println!("{}", enclosed);
 }
-fn picasso(mut blueprint: &Vec<Vec<char>>, pixels: &Vec<(usize, usize)>) {
+fn count_enclosed(data: &Vec<Vec<char>>, path: &Vec<(usize, usize)>) -> u32 {
+    // Get clean path from picasso()
+    let canvas = picasso(data, path);
+    // Assign 0 to enclosed_counter
+    let mut enclosed_counter: u32 = 0;
+    // Start a loop through the array
+    for (idx, line) in canvas.iter().enumerate() {
+        for (index, car) in line.iter().enumerate() {
+            if *car == '.' {
+                if ray_gun(index, line.to_vec()) {
+                    println!("{} {} is true!", idx, index);
+                    enclosed_counter += 1;
+                }
+            }
+        }
+    }
+    // loop through chars in row
+    //send any '.' to ray_gun() as a Vec and an index
+    //increment counter as needed
+    // return counter result
+    enclosed_counter
+}
+fn broom(index: usize, corridor: Vec<char>) {
+    // -> Vec<char>
+    // break corridor in half at index
+    // clean corridor of '-' and '.'
+    // replace all (F, J) and (L, 7) occurences with single '|'
+    // return clean corridor
+}
+fn ray_gun(index: usize, corridor: Vec<char>) -> bool {
+    // use the broom() to sweep the corridor clean before shooting
+    // blast the clean corridor with len()
+    // if len % 2 = 0 return false
+    // else return true
+}
+fn picasso(blueprint: &Vec<Vec<char>>, pixels: &Vec<(usize, usize)>) -> Vec<Vec<char>> {
     let mut canvas: Vec<Vec<char>> = Vec::new();
     let row_len = blueprint[0].len();
     let mut row_amt = blueprint.len();
-    let mut temp_v: Vec<char> = vec!['.'; row_len];
+    let temp_v: Vec<char> = vec!['.'; row_len];
     while row_amt != 0 {
         canvas.push(temp_v.clone());
         row_amt -= 1;
@@ -83,20 +117,18 @@ fn picasso(mut blueprint: &Vec<Vec<char>>, pixels: &Vec<(usize, usize)>) {
     for pixel in pixels {
         canvas[pixel.0][pixel.1] = blueprint[pixel.0][pixel.1];
     }
-
-    for row in canvas {
-        println!("");
-        for el in row {
-            print!("{el}");
-        }
+    for line in &canvas {
+        println!("{:?}", line);
     }
+    canvas
 }
-fn step_counter(data: &Vec<Vec<char>>) -> (i32, Vec<(usize, usize)>) {
+fn step_recorder(data: &Vec<Vec<char>>) -> (i32, Vec<(usize, usize)>) {
     // find start Location by pulling your boostraps()
     let mut location = bootstraps(data);
     // initialize step counter with 1 to account for first step in bootstrap
     let mut step_counter = 1;
     let mut coords: Vec<(usize, usize)> = Vec::new();
+    coords.push(location.coord);
     println!("{:?}", location.coord);
     // start walk-loop.
     loop {
@@ -114,6 +146,7 @@ fn step_counter(data: &Vec<Vec<char>>) -> (i32, Vec<(usize, usize)>) {
     // return step counter
     (step_counter, coords)
 }
+
 fn pathfinder(location: &Location, data: &Vec<Vec<char>>) -> Location {
     // assign (location.last, location.current) path tuple
     let path: (char, char) = (location.last, location.current);
@@ -297,7 +330,7 @@ fn get_list_from_file(path: &str) -> Vec<String> {
         .collect()
 }
 fn parse(data: Vec<String>) -> Vec<Vec<char>> {
-    let mut output: Vec<Vec<char>> = Vec::new();
+    let mut output: Vec<Vec<char>> = Vec::with_capacity(500);
     for string in data {
         let chars: Vec<char> = string.chars().collect();
         output.push(chars);
