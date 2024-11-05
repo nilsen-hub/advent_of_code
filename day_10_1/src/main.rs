@@ -226,32 +226,26 @@ fn bootstraps(data: &Vec<Vec<char>>) -> Location {
     for (idx, loc) in checks.iter().enumerate() {
         let symbol: char = data[loc.0][loc.1];
         match idx {
-            0 => {
-                if valid_north.contains(&symbol) {
+            0 if valid_north.contains(&symbol) => {
                     coord = loc.clone();
                     last = '|';
                     current = symbol.clone();
                     direction = 'N';
                     break;
-                }
             }
-            1 => {
-                if valid_east.contains(&symbol) {
+            1 if valid_east.contains(&symbol) => {
                     coord = loc.clone();
                     last = '-';
                     current = symbol.clone();
                     direction = 'E';
                     break;
-                }
             }
-            2 => {
-                if valid_south.contains(&symbol) {
+            2 if valid_south.contains(&symbol) => {
                     coord = loc.clone();
                     last = '|';
                     current = symbol.clone();
                     direction = 'S';
                     break;
-                }
             }
             _ => {
                 println!("This shouldnt be possible");

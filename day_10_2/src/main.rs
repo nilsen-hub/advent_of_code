@@ -1,4 +1,4 @@
-use std::fs::read_to_string;
+use std::{fs::read_to_string, time::Instant};
 
 /*
 Truth-table
@@ -59,6 +59,7 @@ struct Location {
 }
 
 fn main() {
+    let now = Instant::now();
     // load data from file
     let path = "./data/day10";
     let full_data = get_list_from_file(path);
@@ -66,6 +67,8 @@ fn main() {
     let parsed = parse(full_data);
     let solution = step_recorder(&parsed);
     let enclosed = count_enclosed(&parsed, &solution.1);
+    println!("There are {} tiles of land enclosed in the pipeline", enclosed);
+    println!("program runtime: {}", now.elapsed().as_micros());
     //load parsed data into step_counter()
     //get amount of steps to complete circuit, divide by 2 and output
 }
@@ -81,8 +84,8 @@ fn count_enclosed(data: &Vec<Vec<char>>, path: &Vec<(usize, usize)>) -> u32 {
         // increment counter as needed
         for (index, car) in line.iter().enumerate() {
             if *car == '.' {
-                if ray_caster(index, line.to_vec()) {
-                    println!("{} {} is true!", idx, index);
+                if ray_caster(index, line) {
+                    //println!("{} {} is true!", idx, index);
                     enclosed_counter += 1;
                 }
             }
@@ -91,8 +94,8 @@ fn count_enclosed(data: &Vec<Vec<char>>, path: &Vec<(usize, usize)>) -> u32 {
     // return completed counter
     enclosed_counter
 }
-fn ray_caster(index: usize, vector: Vec<char>) {
-    // -> bool
+fn ray_caster(index: usize, vector: &Vec<char>) -> bool {
+     
     // this algo uses ray-casting to determine wether or not any point
     // in the overall polygon drawn by the pipe-path falls inside said
     // polygon. It works by counting the amount of polygon boundrys
@@ -101,7 +104,29 @@ fn ray_caster(index: usize, vector: Vec<char>) {
     // polygon.
 
     // try to use iterators to solve this one!
-    // truncate vector in at index
+    // truncate vector at index
+    let mut data: &[char] = &vector[0..index].to_vec();
+    let mut proto_beam: Vec<char> = Vec::with_capacity(256);
+    let mut beam: Vec<char> = Vec::with_capacity(256);
+    for el in data{
+        match el {
+            '.'|'-' => continue,
+            _ => proto_beam.push(*el),
+        }
+    }
+    for (index, el) in proto_beam.iter().enumerate(){
+        match el{
+            'F' if proto_beam[index + 1] == 'J' => continue,
+            'L' if proto_beam[index + 1] == '7' => continue,
+            _ => beam.push(*el),
+        }
+    }
+    
+    if beam.len() == 0 || beam.len() % 2 == 0{
+        return false;
+    }
+    true
+
     // remove all '-' and '.' from vector, we only want boundrys
     // if vector.len() is 0, return false (micro-optimizatin)
     // if F is followed by J or L is followed by 7, remove the former
@@ -123,9 +148,9 @@ fn picasso(blueprint: &Vec<Vec<char>>, pixels: &Vec<(usize, usize)>) -> Vec<Vec<
     for pixel in pixels {
         canvas[pixel.0][pixel.1] = blueprint[pixel.0][pixel.1];
     }
-    for line in &canvas {
-        println!("{:?}", line);
-    }
+    //for line in &canvas {
+    //    println!("{:?}", line);
+    //}
     canvas
 }
 fn step_recorder(data: &Vec<Vec<char>>) -> (i32, Vec<(usize, usize)>) {
