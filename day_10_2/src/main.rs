@@ -68,7 +68,6 @@ fn main() {
     let enclosed = count_enclosed(&parsed, &solution.1);
     //load parsed data into step_counter()
     //get amount of steps to complete circuit, divide by 2 and output
-    println!("{}", enclosed);
 }
 fn count_enclosed(data: &Vec<Vec<char>>, path: &Vec<(usize, usize)>) -> u32 {
     // Get clean path from picasso()
@@ -77,32 +76,39 @@ fn count_enclosed(data: &Vec<Vec<char>>, path: &Vec<(usize, usize)>) -> u32 {
     let mut enclosed_counter: u32 = 0;
     // Start a loop through the array
     for (idx, line) in canvas.iter().enumerate() {
+        // loop through chars in row
+        // send any '.' to ray_caster() as a Vec and an index
+        // increment counter as needed
         for (index, car) in line.iter().enumerate() {
             if *car == '.' {
-                if ray_gun(index, line.to_vec()) {
+                if ray_caster(index, line.to_vec()) {
                     println!("{} {} is true!", idx, index);
                     enclosed_counter += 1;
                 }
             }
         }
     }
-    // loop through chars in row
-    //send any '.' to ray_gun() as a Vec and an index
-    //increment counter as needed
-    // return counter result
+    // return completed counter
     enclosed_counter
 }
-fn broom(index: usize, corridor: Vec<char>) {
-    // -> Vec<char>
-    // break corridor in half at index
-    // clean corridor of '-' and '.'
-    // replace all (F, J) and (L, 7) occurences with single '|'
-    // return clean corridor
-}
-fn ray_gun(index: usize, corridor: Vec<char>) -> bool {
-    // use the broom() to sweep the corridor clean before shooting
-    // blast the clean corridor with len()
-    // if len % 2 = 0 return false
+fn ray_caster(index: usize, vector: Vec<char>) {
+    // -> bool
+    // this algo uses ray-casting to determine wether or not any point
+    // in the overall polygon drawn by the pipe-path falls inside said
+    // polygon. It works by counting the amount of polygon boundrys
+    // an imagined ray cast from index 0 to the point of measure has to cross.
+    // If the ray crosses an odd number of boundrys, the point is inside the
+    // polygon.
+
+    // try to use iterators to solve this one!
+    // truncate vector in at index
+    // remove all '-' and '.' from vector, we only want boundrys
+    // if vector.len() is 0, return false (micro-optimizatin)
+    // if F is followed by J or L is followed by 7, remove the former
+    // this must be done because these two combinations of pipes models
+    // a single boundry, but reads as two boundrys if counted without sanitation
+
+    // if length of cleaned vector = 0 or % 2 = 0 return false
     // else return true
 }
 fn picasso(blueprint: &Vec<Vec<char>>, pixels: &Vec<(usize, usize)>) -> Vec<Vec<char>> {
@@ -146,7 +152,6 @@ fn step_recorder(data: &Vec<Vec<char>>) -> (i32, Vec<(usize, usize)>) {
     // return step counter
     (step_counter, coords)
 }
-
 fn pathfinder(location: &Location, data: &Vec<Vec<char>>) -> Location {
     // assign (location.last, location.current) path tuple
     let path: (char, char) = (location.last, location.current);
@@ -233,7 +238,7 @@ fn pathfinder(location: &Location, data: &Vec<Vec<char>>) -> Location {
         }
         _ => println!("BIG MISTAKE"),
     }
-    // assemble new location descriptor "output"
+    // assemble new location descriptor
     // coord = location.coord
     // current = data[coord.0][coord.1]
     // last = location.current
@@ -243,12 +248,12 @@ fn pathfinder(location: &Location, data: &Vec<Vec<char>>) -> Location {
         last: location.current,
         direction,
     }
-    // return output
+    // return Location
 }
 fn bootstraps(data: &Vec<Vec<char>>) -> Location {
     // find 'S' in data, store index, probably use
     // enumerated for-loop for this, inefficient but yields
-    // clean index value.
+    // easy index value.
     let mut index: (usize, usize) = (0, 0);
     'get_index: for (index_row, el1) in data.iter().enumerate() {
         for (index_col, el2) in el1.iter().enumerate() {
@@ -258,6 +263,18 @@ fn bootstraps(data: &Vec<Vec<char>>) -> Location {
             }
         }
     }
+    // initalize Location struct variables.
+    let mut current: char = '0';
+    let mut last: char = '0';
+    let mut coord: (usize, usize) = (0, 0);
+    let mut direction: char = '0';
+
+    // define valid pipe segments for relevant directions
+    let valid_north: [char; 3] = ['F', '7', '|'];
+    let valid_east: [char; 3] = ['7', 'J', '-'];
+    let valid_south: [char; 3] = ['L', 'J', '|'];
+
+    // start north of 'S'and go around the clock looking for valid
     // define north, east and south, relative to S
     let checks: [(usize, usize); 4] = [
         (index.0 - 1, index.1), // north
@@ -265,17 +282,6 @@ fn bootstraps(data: &Vec<Vec<char>>) -> Location {
         (index.0 + 1, index.1), // south
         (index.0, index.1 - 1), // west
     ];
-    // start north of 'S'and go around the clock looking for valid
-    // symbols.
-    // initalize location variables.
-    let mut current: char = '0';
-    let mut last: char = '0';
-    let mut coord: (usize, usize) = (0, 0);
-    let mut direction: char = '0';
-
-    let valid_north: [char; 3] = ['F', '7', '|'];
-    let valid_east: [char; 3] = ['7', 'J', '-'];
-    let valid_south: [char; 3] = ['L', 'J', '|'];
 
     for (idx, loc) in checks.iter().enumerate() {
         let symbol: char = data[loc.0][loc.1];
