@@ -108,12 +108,16 @@ fn ray_caster(index: usize, vector: &Vec<char>) -> bool {
     let mut data: &[char] = &vector[0..index].to_vec();
     let mut proto_beam: Vec<char> = Vec::with_capacity(256);
     let mut beam: Vec<char> = Vec::with_capacity(256);
+    // remove all '-' and '.' from vector, we only want boundrys
     for el in data{
         match el {
             '.'|'-' => continue,
             _ => proto_beam.push(*el),
         }
     }
+    // if F is followed by J or L is followed by 7, remove the former
+    // this must be done because these two combinations of pipes models
+    // a single boundry, but reads as two boundrys if counted without sanitation
     for (index, el) in proto_beam.iter().enumerate(){
         match el{
             'F' if proto_beam[index + 1] == 'J' => continue,
@@ -121,20 +125,12 @@ fn ray_caster(index: usize, vector: &Vec<char>) -> bool {
             _ => beam.push(*el),
         }
     }
-    
+    // if length of cleaned vector = 0 or % 2 = 0 return false
+    // else return true
     if beam.len() == 0 || beam.len() % 2 == 0{
         return false;
     }
     true
-
-    // remove all '-' and '.' from vector, we only want boundrys
-    // if vector.len() is 0, return false (micro-optimizatin)
-    // if F is followed by J or L is followed by 7, remove the former
-    // this must be done because these two combinations of pipes models
-    // a single boundry, but reads as two boundrys if counted without sanitation
-
-    // if length of cleaned vector = 0 or % 2 = 0 return false
-    // else return true
 }
 fn picasso(blueprint: &Vec<Vec<char>>, pixels: &Vec<(usize, usize)>) -> Vec<Vec<char>> {
     let mut canvas: Vec<Vec<char>> = Vec::new();
