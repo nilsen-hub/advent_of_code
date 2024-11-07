@@ -1,4 +1,4 @@
-use std::{collections::HashSet, fs::read_to_string, ops::Index, time::Instant};
+use std::{collections::HashSet, fs::read_to_string, time::Instant};
 
 fn main() {
     let now = Instant::now();
@@ -8,10 +8,11 @@ fn main() {
     // parse data into Vec<Vec<char>>
     let parsed: Vec<Vec<char>> = parse(full_data);
     // apply expansion algo to parsed data, use the pump()
-    let inflated = pump(parsed);
+    //let inflation_map = 
+    let inflation_map =inflation_mapper(&parsed);
     // gather list of galaxies as indices into Vec<(usize, usize)> from
     // the galactic_index().
-    let galaxies = galactic_index(&inflated);
+    let galaxies = galactic_index(&parsed, inflation_map);
     // give list of galaxies to the igmd() (intra galactic measuring device)
     let total_distance = igmd(&galaxies);
     // print results to console
@@ -36,7 +37,7 @@ fn igmd(galaxies:&Vec<(usize, usize)>) -> usize {
         while idx != index{
             let x_distance = coords.0.abs_diff(galaxies[idx].0); 
             let y_distance = coords.1.abs_diff(galaxies[idx].1);
-            distance_accumulator += (x_distance + y_distance);
+            distance_accumulator += x_distance + y_distance;
             idx -= 1; 
         }
     }
@@ -46,22 +47,45 @@ fn igmd(galaxies:&Vec<(usize, usize)>) -> usize {
     
     // return distance accumulator
 }
-fn galactic_index(data: &Vec<Vec<char>>) -> Vec<(usize, usize)> {
+fn galactic_index(data: &Vec<Vec<char>>, inflation_map:(Vec<usize>, Vec<usize>)) -> Vec<(usize, usize)> {
     // returns vector of tuples containing coords to the galaxies
 
     // instantiate vctor of tuples, tuples represent coord x, coord y
     let mut coords:Vec<(usize, usize)> = Vec::with_capacity(512);
-    for (idx_row, row) in data.iter().enumerate(){
-        for (idx_col, el) in row.iter().enumerate(){
+    for (idx_y, row) in data.iter().enumerate(){
+        for (idx_x, el) in row.iter().enumerate(){
             if *el == '#'{
-                coords.push((idx_col, idx_row));
+                let offset = inflation_calculator((idx_x, idx_y), &inflation_map);
+                //println!("Without offset: {:?} -> {:?}", (idx_x, idx_y), (idx_x + offset.0, idx_y + offset.1));
+               //println!("With offset: {:?}", (idx_x + offset.0, idx_y + offset.1));
+
+                coords.push((idx_x + offset.0, idx_y + offset.1));
             }
         }
     }
     coords
+}
+fn inflation_calculator(values:(usize, usize), inflation_map:&(Vec<usize>, Vec<usize>)) -> (usize, usize) {
+    // takes coordinates and adjusts values according to the inflation factor
+    let inflation_factor: usize = 1000000;
+    let mut x_offset: usize = 0;
+    let mut y_offset: usize = 0;
+
+    for el in &inflation_map.0{
+        if values.0 > *el {
+            x_offset += inflation_factor - 1;
+        }
+    }
+    for el in &inflation_map.1{
+        if values.1 > *el {
+            y_offset += inflation_factor - 1;
+        }
+    }
+
+    (x_offset, y_offset)
 }   
-fn pump(mut data:Vec<Vec<char>>) -> Vec<Vec<char>> {
-    // expands data according to the entropic laws of this universe
+fn inflation_mapper(data:&Vec<Vec<char>>) -> (Vec<usize>, Vec<usize>) { 
+    // finds the inflation points of the universe
 
     // make a reference hash set containing all digits from 0 to data[0].len() - 1
     let mut count: usize = data[0].len() - 1;
@@ -105,33 +129,17 @@ fn pump(mut data:Vec<Vec<char>>) -> Vec<Vec<char>> {
         x_empty.push(*val);
     }
     
-    // sort vectors in decending order
+    // sort vectors in ascending order
     y_empty.sort();
     x_empty.sort();
 
-    println!("y empty: {:?}", y_empty);
-    println!("x empty: {:?}", x_empty);
-    // instantiate empty dummy row 
-    let dummy: Vec<char> = vec!['.'; data[1].len()];
-
-    // expand y-axis
-    for index in y_empty{
-            data.insert(index,dummy.clone());
-    }
-    
-    for mut row in &mut data{
-        for index in &x_empty{
-            row.insert(*index, '.');
-        }
-        
-    
-    
-    }
-    //for line in &data{
+    //println!("{:?}", y_empty);
+    //println!("{:?}", x_empty);
+    // return indices that needs to grow with inflation factor
+    //for line in data{
     //    println!("{:?}", line);
     //}
-    data
-    // return refreshed vector
+    (x_empty, y_empty)
 }
 fn parse(data: Vec<String>) -> Vec<Vec<char>> {
     let mut output: Vec<Vec<char>> = Vec::with_capacity(500);
