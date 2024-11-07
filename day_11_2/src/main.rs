@@ -27,7 +27,6 @@ fn igmd(galaxies:&Vec<(usize, usize)>) -> usize {
     // assign galaxy.len() - 1 to boundary
     let boundary = galaxies.len() - 1;
     // start indexed loop over galaxies
-    // for every item
     // find absolute difference between item.0 and item.1 in every following index
     // add differnce.item.0 and difference.item.1 add to
     // distance accumulator
@@ -43,8 +42,6 @@ fn igmd(galaxies:&Vec<(usize, usize)>) -> usize {
     }
 
     distance_accumulator
-
-    
     // return distance accumulator
 }
 fn galactic_index(data: &Vec<Vec<char>>, inflation_map:(Vec<usize>, Vec<usize>)) -> Vec<(usize, usize)> {
@@ -56,9 +53,6 @@ fn galactic_index(data: &Vec<Vec<char>>, inflation_map:(Vec<usize>, Vec<usize>))
         for (idx_x, el) in row.iter().enumerate(){
             if *el == '#'{
                 let offset = inflation_calculator((idx_x, idx_y), &inflation_map);
-                //println!("Without offset: {:?} -> {:?}", (idx_x, idx_y), (idx_x + offset.0, idx_y + offset.1));
-               //println!("With offset: {:?}", (idx_x + offset.0, idx_y + offset.1));
-
                 coords.push((idx_x + offset.0, idx_y + offset.1));
             }
         }
@@ -66,7 +60,7 @@ fn galactic_index(data: &Vec<Vec<char>>, inflation_map:(Vec<usize>, Vec<usize>))
     coords
 }
 fn inflation_calculator(values:(usize, usize), inflation_map:&(Vec<usize>, Vec<usize>)) -> (usize, usize) {
-    // takes coordinates and adjusts values according to the inflation factor
+    // takes coordinates and calculates offsets based on inflation factor
     let inflation_factor: usize = 1000000;
     let mut x_offset: usize = 0;
     let mut y_offset: usize = 0;
@@ -133,12 +127,6 @@ fn inflation_mapper(data:&Vec<Vec<char>>) -> (Vec<usize>, Vec<usize>) {
     y_empty.sort();
     x_empty.sort();
 
-    //println!("{:?}", y_empty);
-    //println!("{:?}", x_empty);
-    // return indices that needs to grow with inflation factor
-    //for line in data{
-    //    println!("{:?}", line);
-    //}
     (x_empty, y_empty)
 }
 fn parse(data: Vec<String>) -> Vec<Vec<char>> {
