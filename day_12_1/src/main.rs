@@ -72,17 +72,18 @@ fn condition_map_analysis(map: &ConditionMap){
     // if step_counter == 0{
     // return 1
     //}
-    // So you had
+    // Check for linked groups
+    // if there are no linked groups 
 
-    for el in reference{
-        print!("{} ", el);
-    }
-    if step_counter == 0{
-        print!("Has only one valid arrangement");
-    } else {
-        print!("Has more than one valid arrangement");
-    }
-    println!("");
+    // debug print: for el in reference{
+    // debug print:     print!("{} ", el);
+    // debug print: }
+    // debug print: if step_counter == 0{
+    // debug print:     print!("Has only one valid arrangement");
+    // debug print: } else {
+    // debug print:     print!("Has more than one valid arrangement");
+    // debug print: }
+    // debug print: println!("");
 
 }
 fn build_condition_map(line: String) -> ConditionMap {
@@ -105,7 +106,8 @@ fn build_condition_map(line: String) -> ConditionMap {
     condition_map
 }
 fn parse_maps(map_springs: &Vec<char>, map_groups: &Vec<usize>) -> (Vec<char>, Vec<SpringGroup>) {
-    // 
+    // BUG UNCOVERED
+    // NEED TO COVER THIS CASE: ??.??????.?#????? 1,4
     // set up definitions and workspace
     // clone map_springs to have a workplace, and a clean reference
     let mut working_vector = map_springs.clone();
