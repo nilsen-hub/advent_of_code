@@ -203,14 +203,15 @@ fn parse_maps(map_springs: &Vec<char>, map_groups: &Vec<usize>) -> (Vec<char>, V
 fn parse_line(line: String) -> (Vec<char>, Vec<usize>) {
     // crack input string into two parts
     let cracked: Vec<&str> = line.split_whitespace().collect();
-    // parse the two output vectors into reasonable types
-    let chars: Vec<char> = cracked[0].chars().collect();
-    let groups: Vec<usize> = cracked[1]
+    // parse the two output vectors into Vec<char> for spring map
+    // and Vec<usize> for group map
+    let map_springs: Vec<char> = cracked[0].chars().collect();
+    let map_groups: Vec<usize> = cracked[1]
         .split(',')
         .map(|s| s.parse().expect("this should have worked"))
         .collect();
     // return tuple of nice data
-    (chars, groups)
+    (map_springs, map_groups)
 }
 fn to_refactor() {
     // set up data and structures

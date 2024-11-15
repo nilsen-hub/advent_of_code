@@ -40,7 +40,7 @@ positions = 4
 .111.22.3...
 lets start by moving the outer value on over:
 .111.22..3..
-this opens up one degree for 2 lets add that one..
+this opens up one degree for 2 lets add that one....
 
 I might have had a wee breakthrough here
 hypothesis: a linked group of two
@@ -67,7 +67,7 @@ thus resulting in 10 - 4 is 6
 
 By this I consider my hypothesis to be correct and true for a linked pair of groups.
 It would be cool to find a way to generalize over this, but lets not get ahead of ourselves
-once you have the base of the triangle, the code is:
+once you have the base of the triangle, the code is: (check line 243 for even sexier code)
 
 fn triangle(base: int) -> int
 triangle = base
@@ -238,3 +238,10 @@ Which we can generalize, and thats kinda cool.
 
 So any n number of groups larger than 1, sharing x amount of freedoms will 
 give a triangle with a base of n - 2 + x
+
+New, sexier way to calculate triangular numbers from a given base size:
+fn triangulate(base:int) -> int
+    if base % 2 == 0
+       let triangle = (base + 1) * (base / 2)
+    else
+       let triangle = base * ((base / 2) + 1) 
