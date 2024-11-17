@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, fs::read_to_string, iter::Map, ops::Index, time::Instant};
+use std::{clone, collections::VecDeque, fs::read_to_string, iter::Map, ops::Index, time::Instant};
 
 #[derive(Debug, Clone)]
 struct SpringGroup {
@@ -166,7 +166,8 @@ fn build_spr_groups(maps: Maps) {
     // check if there are any '#' in the output vector
     // unfuckify any occurences
     if is_fucked(&output_vector) {
-        println!("output:         {:?}", output_vector);
+        // DBUG println!("source:         {:?}", reference);
+        // DBUG println!("output:         {:?}", output_vector);
         let output_tuple = unfuckify(&reference, &output_vector, &output_groups);
     }
 }
@@ -191,13 +192,12 @@ fn get_start_index(spring_map: &Vec<char>, group_id: &usize) -> usize {
 fn unfuckify(
     reference: &Vec<char>,
     working_vector: &Vec<char>,
-    input_groups: &Vec<SpringGroup>,
-) -> (Vec<SpringGroup>, Vec<char>) {
+    input_groups: &Vec<SpringGroup>) -> (Vec<SpringGroup>, Vec<char>) {
     // -> (Vec<SpringGroup>, Vec<char>)
     // this little guy fixes your messed up spring groups
     // and returns edited Vec<SpringGroup> and Vec<char>
     // lets be REALLY explicit here, this might get messy
-    // clone all the things and set up for searching/
+    // clone all the things and set up for searching
     let mut work_vec = working_vector.clone();
     let mut groups = input_groups.clone();
     let forbidden: char = '#';
@@ -205,16 +205,28 @@ fn unfuckify(
     // context matters a lot here..
     let valid_symbols: [char; 2] = ['?', '#'];
     // build a vector of the start indices of the groups we are
-    // dealing with, should probably be inside loop, but Im leaving it for now.
+    // dealing with, should probably be inside loop, but Im leaving it outside
+    // for now, and opt for explicit vector manipulation inside loop instead
     let mut start_indices: Vec<usize> = Vec::with_capacity(8);
     for group in &groups {
         start_indices.push(group.start_index.clone());
     }
-    // this will be set up as a loop, that only exits with a function return
+    // the rest of the function is an infinite loop, it runs until everything
+    // is fixed, and exits with return values once all conditions for valid
+    // groups and base case are met.
     loop {
         // check if its time to return
         if is_fucked(&work_vec) == false {
-            println!("Should be good: {:?}", work_vec);
+            // checks if unfuckification put to groups into contact with
+            // eachother. The dreaded unfuckify-fuckup
+            if is_deeply_fucked(&groups){
+                println!("Source:         {:?}", reference);
+                println!("deeply fucked:  {:?}", work_vec);
+                (groups, work_vec) = deep_unfuckify(&reference, &work_vec, &groups);
+                // after deep unfuckification, we should probably do a 
+                // sanity check, to see that we didnt expose any new hashes
+            }
+            // DBUG println!("Should be good: {:?}", work_vec);
             return (groups, work_vec);
         }
         // find index of the last '#' in working Vector
@@ -315,13 +327,119 @@ fn unfuckify(
         // need to be processed by the unfuckify_2 function.
         // I believe is_super_fucked() can check for adjacent or overlapping groups
         // but actually checking the work is for tomorrow.
-        println!(
-            "                {:?} the hash is at index {}, group {} at start index {} needs to move",
-            work_vec, hash_location, active_group.id, active_group.start_index
-        );
+        // Did some semantic cleaning, the errors are now deeply fucked, calling for 
+        // deep unfuckification.
+        // DBUG println!(
+        // DBUG     "                {:?} the hash is at index {}, group {} at start index {} needs to move",
+        // DBUG     work_vec, hash_location, active_group.id, active_group.start_index
+        // DBUG );
     }
 }
-fn is_super_fucked(input_groups: &Vec<SpringGroup>) -> bool {
+fn deep_unfuckify(
+    reference: &Vec<char>,
+    working_vector: &Vec<char>,
+    input_groups: &Vec<SpringGroup>) -> (Vec<SpringGroup>, Vec<char>) {
+    //  -> (Vec<SpringGroup>, Vec<char>)
+    // Fixes output vector and Spring groups to not have overlapping or adjacent 
+    // groups. I believe this is the last case that needs to be covered before we
+    // can say with certainty that we have a properly parsed input line.
+    
+    // first of all, clone everything. Lazy, I know, but will have to do for now.
+    let mut groups = input_groups.clone();
+    let mut work_vec = working_vector.clone();
+    // set up values to be used for counting 
+    // we need to know how many groups we have
+    let group_amount = groups.len();
+    // we need our valid symbols aswell
+    let valid_symbols: [char; 2] = ['?', '#'];
+    // again we set up an infinite loop which exits function and returns
+    // the values once all conditions are met.
+    loop {
+        // first check if its time to exit
+        if is_deeply_fucked(&groups) == false{
+            println!("LGTM!           {:?}", work_vec);
+            return (groups, work_vec)
+        }
+        // figure out the rightmost group that needs changing
+        // set a counter, since we are going backwards.
+        // remember that the base assumption is that the further left a group is 
+        // placed, the more confident we are of its correctness
+        let mut counter = group_amount - 1;
+        loop{
+            // first some semantic clarity
+            let group_to_check_index = groups[counter].start_index;
+            let reference_group_placement = groups[counter - 1].start_index + groups[counter - 1].size;
+            if group_to_check_index <= reference_group_placement{
+                break;
+            }
+            counter -= 1;
+        }
+        // counter has now captured the index of the group we want to modify
+        // lets continue being super explicit
+        let mut active_group = groups[counter].clone();
+        let next = active_group.start_index + active_group.size;
+        let left_group = &groups[counter - 1];
+        // the procedure now, is to move the active group over to the next valid
+        // spot on the right in the working vector.
+        
+        // I believe it is safest to clean both groups associated with the
+        // fuckening from work_vec. 
+        // Then reinsert the left one. 
+        // Then check validity of the next step for active group
+        // if not valid, search ahead until a valid placement is found
+        // then insert active group.
+        // we have to assume the data is good so no overflow will ever happen
+        let left_group_range = left_group.start_index + left_group.size - 1;
+        let mut active_group_range = active_group.start_index + active_group.size - 1;
+        // cleaning work_vec of left group, set counter
+        counter = left_group_range;
+        while counter >= left_group.start_index{
+            work_vec[counter] = reference[counter];
+            counter -= 1;
+        }
+        // cleaning work_vec of active group, set counter
+        counter = active_group_range;
+        while counter >= active_group.start_index{
+            work_vec[counter] = reference[counter];
+            counter -= 1;
+        }
+        // then reinsert left group. It might seem a bit redundant, but
+        // this clean/redraw step consideres the case were left actually
+        // overwrote part of active group.
+        
+        counter = left_group_range;
+        while counter >= left_group.start_index{
+            let char_id = char::from_digit(left_group.id as u32, 10).unwrap();
+            work_vec[counter] = char_id;
+            counter -= 1;
+        }
+        // check if next index for active group is not valid
+        if valid_symbols.contains(&work_vec[next]) == false{
+            // here we need some logic to look ahead for the next valid
+            // placement of the group
+            // it needs to account for the range of active group
+            // the main purpose of this loop is to change "next"
+            // variable so the group update below is valid
+        }
+        // println!("BREAK CHECK {:?}", work_vec);
+        // determine new start index for active group by substracting
+        // (group size - 1) from next variable and update active group
+        // SpringGroup, and update the same in groups vector
+        let new_start_index = next - (active_group.size - 1);
+        active_group.start_index = new_start_index;
+        groups[active_group.id] = active_group.clone();
+
+        // update active group range and insert active group into work_vec
+        active_group_range = active_group.start_index + active_group.size - 1;
+        counter = active_group_range;
+        while counter >= active_group.start_index{
+            let char_id = char::from_digit(active_group.id as u32, 10).unwrap();
+            work_vec[counter] = char_id;
+            counter -= 1;
+        }
+    }
+}
+fn is_deeply_fucked(input_groups: &Vec<SpringGroup>) -> bool {
     // -> bool
     // checks for adjacent or overlapping groups
     let mut counter = input_groups.len() - 1;
