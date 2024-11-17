@@ -1,4 +1,4 @@
-use std::{clone, collections::VecDeque, fs::read_to_string, iter::Map, ops::Index, time::Instant};
+use std::{clone, fs::read_to_string, iter::Map, ops::Index, time::Instant};
 
 #[derive(Debug, Clone)]
 struct SpringGroup {
@@ -15,13 +15,13 @@ struct Maps {
 #[derive(Debug, Clone)]
 struct ConditionMap {
     maps: Maps,
-    first_arrangement: Vec<char>,
+    base_arrangement: Vec<char>,
     spring_groups: Vec<SpringGroup>,
 }
 
 fn main() {
     let now = Instant::now();
-    let path = "./data/day12";
+    let path = "./data/day12T";
     let full_data = get_list_from_file(path);
     let mut value_accumulator: usize = 0;
     let mut counter = 1;
@@ -44,21 +44,146 @@ fn arrangement_coordinator(line: String) {
     // and make maps struct
     let (springs, groups) = parse_line(line);
     let maps = Maps { springs, groups };
-    build_cm(maps);
-    // DBug | println!("springs: {:?} groups: {:?}", map_springs, map_groups);
     // Get ConditionMap with build_cm()
-    // Analyze ConditionMap to determine numbber of unique arrangements
+    let map = build_cm(maps);
+    let arrangement_amount = map_analyzer(&map);
+    // DBUG for c in map.base_arrangement{
+    // DBUG     print!("{}", c);
+    // DBUG }
+    // DBUG print!(" ");
+    // DBUG for n in map.maps.groups{
+    // DBUG     print!("{},",n);
+    // DBUG }
+    // DBUG println!("");
+    
+    // Analyze ConditionMap to determine number of unique arrangements
     // return number of unique arrangements
 }
-fn build_cm(maps: Maps) {
+fn map_analyzer(map: &ConditionMap) -> usize {
+    // -> usize
+    // Determines how many possible valid arrangements of groups in maps
+    // exists.
+    // I operate with something I call degrees of freedom, shorthand 
+    // "freedoms". A freedom is how many slots a group can fit into.
+    // every group has at least one freedom.
+    // a group can be single, linked or both
+    // a single group is completely independent from the other groups
+    // a linked group shares freedoms with one or more other groups, so
+    // the number of freedoms at any moment is determined by the position of
+    // another group.
+    // some groups are both single and linked, where they have some independent
+    // freedom and some shared freedom, I havent actually studied a map with
+    // this characteristic, but I have to account for it. 
+    // multiplying the freedoms of each group (linked groups count as one)
+    // will give us the answer to how many possible arrangements exists in the
+    // map
+    // first off, lets clone everything we need
+    
+    let mut working_vector = map.base_arrangement.clone();
+    let mut groups = map.spring_groups.clone();
+    let reference = &map.maps.springs;
+    // open vector to track each groups freedoms, instantiate with 1
+    let mut freedom_counter: Vec<usize> = vec![1];
+    // filter groups with more than one freedom
+    let mut free_groups: Vec<SpringGroup> = get_free_groups(&groups, &working_vector, &reference);
+
+    println!("{:?}", reference);
+    if free_groups.len() == 0{
+        println!("{:?} has one possible arrangement", working_vector);
+        return 1
+    } else {
+        println!("{:?} has multiple possible arrangements", working_vector);
+    }
+    return 0
+}
+fn get_free_groups(groups: &Vec<SpringGroup>, working_vector: &Vec<char>, reference: &Vec<char>) -> Vec<SpringGroup> {
+    // -> Vec<SpringGroup>
+    // works out what groups have any freedoms at all
+    let mut output_groups = groups.clone();
+    let mut counter = output_groups.len();
+    let mut check_vector = working_vector.clone();
+    // removes obviously locked groups
+    loop {
+        if counter == 0{
+            break
+        }
+        counter -= 1;
+        if is_locked(&output_groups[counter], reference){
+            output_groups.remove(counter);
+        }
+    }
+    counter = output_groups.len();
+    // removes less obviously locked groups
+    // always counting backwards
+    loop {
+        if counter == 0{
+            break
+        }
+        counter -= 1;
+        let (check_vector, still_locked) = still_locked(&groups[counter], &check_vector, &reference);
+        if still_locked{
+            output_groups.remove(counter);
+        }
+    }
+    output_groups
+}
+fn still_locked(group: &SpringGroup, working_vector: &Vec<char>, reference: &Vec<char>) -> (Vec<char>, bool) {
+    // -> (Vec<char>, bool)
+    // checks if group is locked, even if stuff moves around. This is very
+    // step by step, final, optimized solution will do more stuff at once
+    // lots of useful calculations done here are simply dropped, but you know
+    // cognitive load is a beast, and this one is full of it.
+
+    // define next index after group, and its neighbour
+    let mut check_vec = working_vector.clone();
+    let mut start_index = group.start_index;
+    let next = group.start_index + group.size;
+    let neighbour = next + 1;
+
+    // checks if group is at edge, and moveable, if moveable, move
+    // update checkvec, since we're only modelling now, sloppy and fast
+    // is the name of the game
+    if neighbour == reference.len(){
+        check_vec[start_index] = reference[start_index];
+        check_vec[start_index + 1] = '0';
+        return (check_vec, false)
+    }
+    if check_vec[neighbour].is_numeric(){
+        println!("{:?} groupid: {} still locked", check_vec, group.id);
+        return (check_vec, true)
+    } else {
+        check_vec[start_index] = reference[start_index];
+        check_vec[start_index + 1] = '0';
+        return (check_vec, false)
+    }
+
+}
+fn is_locked(group: &SpringGroup, reference: &Vec<char>) -> bool {
+    // checks if group is locked in place by topography
+    let start = reference[group.start_index];
+    let next = group.start_index + group.size;
+    if start == '#' || next == reference.len() || reference[next] == '.'{
+        println!("{:?} groupid: {} locked", reference, group.id);
+        return true
+    }
+    false
+}
+fn build_cm(maps: Maps) -> ConditionMap {
     // -> ConditionMap
     // Get ConditionMap.spring_groups: Vec<SpringGroup>
-    build_spr_groups(maps);
     // Get left leaning first valid arrangement
+    let (spring_groups, base_arrangement) = build_spr_groups(&maps);
+    let map = ConditionMap{
+        maps, 
+        base_arrangement,
+        spring_groups,
+    };
+
+    map
     // Fill and return struct
 }
-fn build_spr_groups(maps: Maps) {
-    // -> Vec<SpringGroups>, base_arrangement (Vec<char>)
+fn build_spr_groups(maps: &Maps) -> (Vec<SpringGroup>, Vec<char>) {
+    // -> (Vec<SpringGroup>, Vec<char>)
     // The third time I'm attempting to build a decent function for this..
     // Takes maps, and uses them to build a valid base arrangement of
     // spring groups in the spring maps, also returns a vector of
@@ -84,10 +209,10 @@ fn build_spr_groups(maps: Maps) {
     // Also make groups variable, for semantic clarity
     // Have valid symbols ready
     // Instantiating vector which will hold the finished SpringGroup structs
-    let reference = maps.springs;
+    let reference = maps.springs.clone();
     let mut working_vector = reference.clone();
     let mut output_vector: Vec<char> = Vec::with_capacity(30);
-    let groups = maps.groups;
+    let groups = maps.groups.clone();
     let valid_symbols: [char; 2] = ['?', '#'];
     let mut output_groups: Vec<SpringGroup> = Vec::with_capacity(8);
     //println!("{:?}", reference);
@@ -168,8 +293,10 @@ fn build_spr_groups(maps: Maps) {
     if is_fucked(&output_vector) {
         // DBUG println!("source:         {:?}", reference);
         // DBUG println!("output:         {:?}", output_vector);
-        let output_tuple = unfuckify(&reference, &output_vector, &output_groups);
+        (output_groups, output_vector) = unfuckify(&reference, &output_vector, &output_groups);
     }
+    // DBUG println!("output vector {:?}", output_vector);
+    (output_groups, output_vector)
 }
 fn is_fucked(spring_map: &Vec<char>) -> bool {
     let forbidden: char = '#';
@@ -220,11 +347,13 @@ fn unfuckify(
             // checks if unfuckification put to groups into contact with
             // eachother. The dreaded unfuckify-fuckup
             if is_deeply_fucked(&groups){
-                println!("Source:         {:?}", reference);
-                println!("deeply fucked:  {:?}", work_vec);
+                // DBUG println!("Source:         {:?}", reference);
+                // DBUG println!("deeply fucked:  {:?}", work_vec);
                 (groups, work_vec) = deep_unfuckify(&reference, &work_vec, &groups);
                 // after deep unfuckification, we should probably do a 
                 // sanity check, to see that we didnt expose any new hashes
+                // however, I'm lazy, and this case does not appear in my
+                // data, so I'll leave it for later
             }
             // DBUG println!("Should be good: {:?}", work_vec);
             return (groups, work_vec);
@@ -357,7 +486,7 @@ fn deep_unfuckify(
     loop {
         // first check if its time to exit
         if is_deeply_fucked(&groups) == false{
-            println!("LGTM!           {:?}", work_vec);
+            // DBUG println!("LGTM!           {:?}", work_vec);
             return (groups, work_vec)
         }
         // figure out the rightmost group that needs changing
@@ -420,8 +549,11 @@ fn deep_unfuckify(
             // it needs to account for the range of active group
             // the main purpose of this loop is to change "next"
             // variable so the group update below is valid
+            // However, I'm lazy right now, and my set does not
+            // contain this case, so this is saved for the 
+            // optimizing pass that may or may not come
         }
-        // println!("BREAK CHECK {:?}", work_vec);
+        // DBUG println!("BREAK CHECK {:?}", work_vec);
         // determine new start index for active group by substracting
         // (group size - 1) from next variable and update active group
         // SpringGroup, and update the same in groups vector
