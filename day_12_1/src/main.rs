@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, fs::read_to_string, iter::Map, time::Instant};
+use std::{collections::VecDeque, fs::read_to_string, iter::Map, ops::Index, time::Instant};
 
 #[derive(Debug, Clone)]
 struct SpringGroup {
@@ -21,12 +21,15 @@ struct ConditionMap {
 
 fn main() {
     let now = Instant::now();
-    let path = "./data/day12T";
+    let path = "./data/day12";
     let full_data = get_list_from_file(path);
     let mut value_accumulator: usize = 0;
+    let mut counter = 1;
     for line in full_data {
         //let total_arrangements_in_maps =
+        println!("line number {}", counter);
         arrangement_coordinator(line);
+        counter += 1;
         //value_accumulator += total_arrangements_in_maps;
     }
     println!(
@@ -62,8 +65,8 @@ fn build_spr_groups(maps: Maps) {
     // spring group coordinates.
 
     // Builds a valid base case of spring groups
-    // The rules are 
-    
+    // The rules are:
+
     // - Groups must appear in order provided
     // - No groups on '.'
     // - All '#' must be covered by a group
@@ -85,46 +88,58 @@ fn build_spr_groups(maps: Maps) {
     let mut working_vector = reference.clone();
     let mut output_vector: Vec<char> = Vec::with_capacity(30);
     let groups = maps.groups;
-    let valid_symbols: [char; 2] = ['?','#'];
-    let mut output: Vec<SpringGroup> = Vec::with_capacity(8);
-    println!("{:?}", reference);
+    let valid_symbols: [char; 2] = ['?', '#'];
+    let mut output_groups: Vec<SpringGroup> = Vec::with_capacity(8);
+    //println!("{:?}", reference);
 
-    for (index, group_size) in groups.iter().enumerate(){
+    for (index, group_size) in groups.iter().enumerate() {
         // loops through groups, checks them against reference, and
         // eventually transfers valid groups from working vector into
         // output vector. Index is used as group ID in SpringGroup struct
-        // Define window matching size of current group to pass over 
-        // working Vector. 
+        // Define window matching size of current group to pass over
+        // working Vector.
         // Instantiate counter for indexing.
         // Instantiate bounds to avoid overflows
         // Make group amount variable to help semantic clarity
-        // and start loop. 
-        let mut window = working_vector.windows(*group_size);
+        // and start loop.
         let mut counter: usize = 0;
         let bounds = working_vector.len();
-        let next_index = counter + group_size;
         let group_amount = groups.len();
-        'group_loop: loop{
-            let mut valid_flag:bool = true;
+        'group_loop: loop {
+            let mut window = counter + group_size;
+            let next_index = counter + group_size;
+            let mut valid_flag: bool = true;
             // start or advance window
-            let active_window = window.next().unwrap();
             // check that window contains all valid symbols
-            for el in active_window{
-                if valid_symbols.contains(el) == false{
+            while window > counter {
+                window -= 1;
+                if valid_symbols.contains(&working_vector[window]) == false {
                     valid_flag = false;
                     break;
                 }
             }
             // check for trailing '#', also check your not looking out of bounds
-            if next_index < bounds && working_vector[next_index] == '#'{
+            if next_index < bounds && working_vector[next_index] == '#' {
                 valid_flag = false;
             }
             // if both checks pass, the group has a valid placement.
             // Insert group into working vector, split group and next index
-            // (if available) away from working vector, and append to 
+            // (if available) away from working vector, and push to
             // output_vector
             if valid_flag {
-                if index + 1 == group_amount{
+                // reset window
+                window = next_index - 1;
+                // loop through window and insert group id where needed
+                while window >= counter {
+                    working_vector[window] = char::from_digit(index.clone() as u32, 10).unwrap();
+                    if window == 0 {
+                        break;
+                    }
+                    window -= 1;
+                }
+                // split working vector, push left side to output, make right side
+                // into new working vector
+                if index + 1 == group_amount {
                     output_vector.append(&mut working_vector);
                 } else {
                     let (left, right) = working_vector.split_at(next_index + 1);
@@ -133,13 +148,195 @@ fn build_spr_groups(maps: Maps) {
                     }
                     working_vector = (*right).to_vec();
                 }
-                println!("{:?}", output_vector);
                 break 'group_loop;
-
             }
+            counter += 1;
         }
     }
-    // println!("{:?}", working_vector);
+    // get start index of each group, build SpringGroup struct and push to output
+    for (id, size) in groups.iter().enumerate() {
+        let start_index = get_start_index(&output_vector, &id);
+        let spring_group = SpringGroup {
+            id,
+            size: *size,
+            start_index,
+        };
+        output_groups.push(spring_group);
+    }
+    // check if there are any '#' in the output vector
+    // unfuckify any occurences
+    if is_fucked(&output_vector) {
+        println!("output:         {:?}", output_vector);
+        let output_tuple = unfuckify(&reference, &output_vector, &output_groups);
+    }
+}
+fn is_fucked(spring_map: &Vec<char>) -> bool {
+    let forbidden: char = '#';
+    if spring_map.contains(&forbidden) {
+        return true;
+    }
+    false
+}
+fn get_start_index(spring_map: &Vec<char>, group_id: &usize) -> usize {
+    let char_id = char::from_digit(group_id.clone() as u32, 10).unwrap();
+    let mut output: usize = 0;
+    for (index, el) in spring_map.iter().enumerate() {
+        if *el == char_id {
+            output = index;
+            break;
+        }
+    }
+    output
+}
+fn unfuckify(
+    reference: &Vec<char>,
+    working_vector: &Vec<char>,
+    input_groups: &Vec<SpringGroup>,
+) -> (Vec<SpringGroup>, Vec<char>) {
+    // -> (Vec<SpringGroup>, Vec<char>)
+    // this little guy fixes your messed up spring groups
+    // and returns edited Vec<SpringGroup> and Vec<char>
+    // lets be REALLY explicit here, this might get messy
+    // clone all the things and set up for searching/
+    let mut work_vec = working_vector.clone();
+    let mut groups = input_groups.clone();
+    let forbidden: char = '#';
+    // yes, I understand that the hash is both valid and forbidden
+    // context matters a lot here..
+    let valid_symbols: [char; 2] = ['?', '#'];
+    // build a vector of the start indices of the groups we are
+    // dealing with, should probably be inside loop, but Im leaving it for now.
+    let mut start_indices: Vec<usize> = Vec::with_capacity(8);
+    for group in &groups {
+        start_indices.push(group.start_index.clone());
+    }
+    // this will be set up as a loop, that only exits with a function return
+    loop {
+        // check if its time to return
+        if is_fucked(&work_vec) == false {
+            println!("Should be good: {:?}", work_vec);
+            return (groups, work_vec);
+        }
+        // find index of the last '#' in working Vector
+        // this is done very naively by going through vector
+        // and updating the work index value
+        let mut hash_location: usize = 0;
+        for (index, el) in work_vec.iter().enumerate() {
+            if *el == forbidden {
+                hash_location = index;
+            }
+        }
+        // now that we got the location, we need to determine what group
+        // needs to move where to make a left leaning valid configuration
+        // this will be done by checking the hash_location against the
+        // start_indices vector, we move backwards through the start_indices
+        // vector.
+        let mut counter = start_indices.len() - 1;
+        while start_indices[counter] > hash_location {
+            counter -= 1;
+        }
+        // now counter holds the id and index of the SpringGroup that needs to
+        // change to cover the '#' and unfuck this particular hash_location lets
+        // hold this group in a variable
+
+        let mut active_group = groups[counter].clone();
+        // lets also get the size of the group into a variable, for semantic
+        // clarity
+        let size = active_group.size;
+        // define last index of group
+        let group_end = active_group.start_index + size;
+        // i think we are ready to do some inserting now
+        // first, lets determine the new start index for the group
+        // first we lift the group from the work_vec, to avoid matching to itself
+        // set counter to group start index
+        counter = active_group.start_index;
+        while counter < group_end {
+            work_vec[counter] = reference[counter];
+            counter += 1;
+        }
+
+        // just checking this is correct
+        // work_vec[counter] = '!'; Logic checks out
+        // this should also help uncover new hashes that needs dealing with
+        // then we need to figure out the earliest good spot to place the group
+        // that is accomplished by starting at the hash location and searching
+        // backwards for ? and #, as far as it goes while group size still covers
+        // hash_location, if the furthest location borders a hash, that location is
+        // invalid, as there will be a number there once the whole thing is unfuckified
+        // instantiate new index variable.
+        // also set start check variable for new index - 1 for semantic clarity
+        let mut new_start = hash_location;
+        let mut start_check = new_start - 1;
+        while hash_location - start_check < size {
+            if valid_symbols.contains(&reference[start_check]) {
+                new_start = start_check;
+                start_check -= 1;
+                continue;
+            }
+            break;
+        }
+        // Now, if my logic is solid, new start should hold the new start index
+        // for the active group, so lets change the value
+        // and update struct in groups vector
+        // also update start indices vector
+        active_group.start_index = new_start;
+        groups[active_group.id] = active_group.clone();
+        start_indices[active_group.id] = new_start;
+
+        // then we insert the new group into work_vec
+        // set the counter to last index of group
+        counter = new_start + size - 1;
+        // also set g_id_char for semantic clarity
+        let g_id_char = char::from_digit(active_group.id.clone() as u32, 10).unwrap();
+        while counter >= new_start {
+            work_vec[counter] = g_id_char;
+            counter -= 1;
+        }
+
+        // I'm putting it down here, but the code should happen above.
+        // Theres one more case that needs to be accounted for
+        // I'm pretty sure its possible, with the algo as it is, to overwrite
+        // later groups, if the hash is placed in the middle of the pack.
+        // There needs to exist both a check, that the right side of the group
+        // is not bordering or overlapping the next group, and a method to
+        // solve the situation if it arises. I will find an example, its bound to be
+        // in the set.
+        // At least I know that I'm right now, this situation, at least with
+        // neighborings groups, arises.
+        // But we have some information. We _know_ that the active group is
+        // in an optimal location, its both maximally left leaning, and its covering
+        // the hashes it needs to cover. So its placed just right. Now, the pressing
+        // question, is this best solved with some code right here, or do we need an
+        // unfuckify 2 function?
+        // I'm leanig towards a new function, unfuckify_2, the depths of fucked. The
+        // checks should be done by comparing data in the SpringGroups, not by
+        // analyzing the output string, if the checks detect adjacent or overlapping
+        // numbers. The output string, along with a reference and working string
+        // need to be processed by the unfuckify_2 function.
+        // I believe is_super_fucked() can check for adjacent or overlapping groups
+        // but actually checking the work is for tomorrow.
+        println!(
+            "                {:?} the hash is at index {}, group {} at start index {} needs to move",
+            work_vec, hash_location, active_group.id, active_group.start_index
+        );
+    }
+}
+fn is_super_fucked(input_groups: &Vec<SpringGroup>) -> bool {
+    // -> bool
+    // checks for adjacent or overlapping groups
+    let mut counter = input_groups.len() - 1;
+    loop {
+        if input_groups[counter].start_index
+            <= input_groups[counter - 1].start_index + input_groups[counter - 1].size
+        {
+            return true;
+        }
+        counter -= 1;
+        if counter == 0 {
+            break;
+        }
+    }
+    false
 }
 fn parse_line(line: String) -> (Vec<char>, Vec<usize>) {
     // Parses line from full data into types used in:
