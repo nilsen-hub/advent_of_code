@@ -21,7 +21,7 @@ struct ConditionMap {
 
 fn main() {
     let now = Instant::now();
-    let path = "./data/day12T";
+    let path = "./data/day12TT";
     let full_data = get_list_from_file(path);
     let mut value_accumulator: usize = 0;
     let mut counter = 1;
@@ -91,7 +91,7 @@ fn map_analyzer(map: &ConditionMap) -> usize {
         return 1;
     }
     // separate the single groups from the linked groups
-    let mut (single_groups, linked_groups) = group_classifier(&free_groups, &working_vector, &reference);
+    let (mut single_groups, mut linked_groups) = group_classifier(&free_groups, &working_vector, &reference);
 
 
     return 0;
@@ -101,10 +101,52 @@ fn group_classifier(
     working_vector: &Vec<char>,
     reference: &Vec<char>,
 ) -> (Vec<SpringGroup>, Vec<SpringGroup>) {
+    // Separates single groups from linked groups by finding all single groups, 
+    // sticking them in the singles vector, and then put any remaining groups
+    // into the linked vector.
+    // Make discard pile vector to get rid of processed indices
+    let mut discard_pile: Vec<usize> = Vec::with_capacity(4);
+    // also clone groups, it will be changing
+    let mut group_work = groups.clone();
     let mut singles: Vec<SpringGroup> = Vec::with_capacity(4);
     let mut linked: Vec<SpringGroup> = Vec::with_capacity(4);
+    for (index, active_group) in groups.iter().enumerate(){
+        if is_single(&index, &active_group, &groups, &working_vector, &reference){
+            singles.push(group.clone());
+            discard_pile.push(index);
+        }
+    }
+    // clean singles from groups vector.
+    discard_pile.reverse();
+    for index in discard_pile{
+        group_work.remove(index);
+    }
 
     (singles, linked)
+}
+fn is_single(
+    index: &usize
+    active_group: &SpringGroup,
+    groups: &Vec<SpringGroup>,
+    working_vector: &Vec<char>,
+    reference: &Vec<char>,
+) -> bool {
+    // checks for singles, but there should be some way to immediatly
+    // filter for singles/linked in caller function so that 
+    // check: if at last index of groups your'e single can return
+    // true, because if the last one was linked, it would already
+    // be filtered into linked vector.
+    let bounds = groups.len();
+    // lets get rid of the easy cases first
+    // if theres only one group in vector, group is single
+    if groups.len() == 1{
+        return true
+    }
+    // then we check if we are dealing with contigous group IDs
+    if index + 1 != bounds && active_group.id + 1 != groups[index + 1].id{
+        return true
+    }
+    return false
 }
 fn get_free_groups(
     groups: &Vec<SpringGroup>,

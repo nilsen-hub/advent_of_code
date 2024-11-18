@@ -267,6 +267,7 @@ more variations of the case. But for now, lets look at:
 ? 0 0 0 ? ? 1 1 1 ? 2 ? ? ? ? 
 ? 0 0 0 ? ? ? 1 1 1 ? 2 ? ? ?  so here we know that this dance gives a triangular number 
 ? 0 0 0 ? ? 1 1 1 ? ? 2 ? ? ?  with base 3, because theres 3 shared freedoms. 
+
 Now, when group 2 goes out of range
 of group 1, they both turn into singles
 both with their own multiplier.. However, this multiplier
@@ -280,46 +281,59 @@ is:
 (single freedoms group 2 * shared freedoms) + triangle of shared freedoms
 in this synthetic case this boils down to:
 (3*3) + 6 = 15
-Theres another case of shared freedoms between more than two groups, where
-for instance 0,1,2 shares three freedoms and 1,2 shares four, and 2 has one 
-single freedom, how would one capture this case? This could look something 
-like this:
 
-? ? ? # ? ? ? ? ? ? ? # ? ? ? ? ? ? ? ?  3,5,1
-? 0 0 0 ? ? ? 1 1 1 1 1 ? 2 ? ? ? ? ? ?
-      0 0 0           1 1 1 1 1   2
+This looks like it can get even messier, consider the below synthetic map
 
-lets make some assertions:
-0 has three freedoms, shared with 1 and 2
-1 has five freedoms, three shared with all, and two shared with two
-2 has seven freedoms, three shared with all, two shared with 1 and two singles.
+? ? ? # ? ? ? ? ? ? # ? ? ? ? ? ? ? ?  3,5,1
+? 0 0 0 ? ? 1 1 1 1 1 ? 2 ? ? ? ? ? ?  <- base placement
 
-In danger of confusing myself now..
+Lets do some observations:
 
-Theres 3 distinct groups here:
-0,1,2
-0,1
-1,2
+- group 0 has two independent freedoms in the base case, this arrangement
+  would cause my current strategy to fail. As i currently consider any group
+  with freedoms in the base case to be pure single. This is obviously not true, 
+  so needs correcting
+- group 1 has no freedoms in the base case
+- group 2 has 7 freedoms in the base case
 
-lets just sum the triangles for now:
-0,1,2 = 10 ( (n-2)+x )
-0,1   = 6  triangle base 3
-1,2   = 3  triangle base 2
+I'm flying blind, for now, but lets pretend [0] is a free single, and keep the 2 freedoms
+in this neat little box:
+{2}
 
-all in all 19 arrangements just adding up the triangles
-but once 1,2 goes out of range, 0 becomes single and we multiply:
+If we then pretend [0] is locked there, and calculate for [1,2] using what we figured
+out from line 277: (single freedoms group 2 * shared freedoms) + triangle of shared freedoms
+we get 
+(2*5) + 15 = 25 
+Which seem like a lot, but makes sense when i visualize it
+then we multiply that answer with the 2 we already have from the freedoms of [0]. 
+That gives 50 which still seem like a lot, but is the logical conclusion from accepting the 25.
 
-1,2 = 3*3 = 9
+lets keep these in view:
+? ? ? # ? ? ? ? ? ? # ? ? ? ? ? ? ? ?
+? 0 0 0 ? ? 1 1 1 1 1 ? 2 ? ? ? ? ? ?
 
-I think we start with the shared freedoms between all of them 
-following the formula on line 241: (n - 2) + x
-(3 groups - 2) + 3 freedoms
-             1 + 3 = 4
-triangle of      4 = 10
-all shared = 10
-Now we continue with the shared freedoms between 1 and 2
-1-2 shared = triangle of 2
-1-2 shared = 3
+Dammit, this is getting really messy. There has to be an elegant way of generalizing this.
+A way to unify this case with the previous (and maybe even further)..
+
+Lets try to identify group movement first.
+
+1 - check if [2,1] is shared
+    1.1 - count freedoms in [1]
+    1.2 - move [2] once to the right
+    1.3 - count freedoms in [1]
+    1.4 - if [1] has gained freedom, [2,1] is shared
+
+Yes they are shared.
+
+2 - check if [1,0] is shared
+    2.1 - count freedoms in [0]
+    2.2 - move [1] once to the right
+    2.3 - count freedoms in [0]
+    2.4 - if [0] has gained freedom, [1,0] is shared
+
+Ok, I need to do some code now before my head explodes.. Knowing full well I don't fully understand
+
+
 
 
 
