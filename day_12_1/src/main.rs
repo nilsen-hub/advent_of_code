@@ -71,7 +71,7 @@ fn map_analyzer(map: &ConditionMap) -> usize {
     // a linked group shares freedoms with one or more other groups, so
     // the number of freedoms at any moment is determined by the position of
     // another group.
-    // some groups are both single and linked, where they have some independent
+    // groups can be  both single and linked, where they have some independent
     // freedom and some shared freedom, I havent actually studied a map with
     // this characteristic, but I have to account for it.
     // multiplying the freedoms of each group (linked groups count as one)
@@ -82,19 +82,29 @@ fn map_analyzer(map: &ConditionMap) -> usize {
     let mut working_vector = map.base_arrangement.clone();
     let mut groups = map.spring_groups.clone();
     let reference = &map.maps.springs;
-    // open vector to track each groups freedoms, instantiate with 1
-    let mut freedom_counter: Vec<usize> = vec![1];
+    // open vector to track total freedoms in map
+    let mut freedom_counter: Vec<usize> = Vec::with_capacity(8);
     // filter groups with more than one freedom
     let mut free_groups: Vec<SpringGroup> = get_free_groups(&groups, &working_vector, &reference);
-
-    println!("{:?}", reference);
+    // check if any group has more than one freedom, if no, return 1.
     if free_groups.len() == 0 {
-        println!("{:?} has one possible arrangement", working_vector);
         return 1;
-    } else {
-        println!("{:?} has multiple possible arrangements", working_vector);
     }
+    // separate the single groups from the linked groups
+    let mut (single_groups, linked_groups) = group_classifier(&free_groups, &working_vector, &reference);
+
+
     return 0;
+}
+fn group_classifier(    
+    groups: &Vec<SpringGroup>,
+    working_vector: &Vec<char>,
+    reference: &Vec<char>,
+) -> (Vec<SpringGroup>, Vec<SpringGroup>) {
+    let mut singles: Vec<SpringGroup> = Vec::with_capacity(4);
+    let mut linked: Vec<SpringGroup> = Vec::with_capacity(4);
+
+    (singles, linked)
 }
 fn get_free_groups(
     groups: &Vec<SpringGroup>,
@@ -113,13 +123,11 @@ fn get_free_groups(
         }
         counter -= 1;
         if is_locked(&output_groups[counter], reference) {
-            println!(
-                "groupid: {} is removed from vecter",
-                output_groups[counter].id
-            );
+
             output_groups.remove(counter);
         }
     }
+
     counter = output_groups.len();
     // removes less obviously locked groups
     // always counting backwards
@@ -129,18 +137,15 @@ fn get_free_groups(
         }
         counter -= 1;
         let (check_vector, still_locked) =
-            still_locked(&groups[counter], &check_vector, &reference);
+            locked_deep(&output_groups[counter], &check_vector, &reference);
         if still_locked {
-            println!(
-                "groupid: {} is removed from vector",
-                output_groups[counter].id
-            );
+
             output_groups.remove(counter);
         }
     }
     output_groups
 }
-fn still_locked(
+fn locked_deep(
     group: &SpringGroup,
     working_vector: &Vec<char>,
     reference: &Vec<char>,
@@ -160,13 +165,14 @@ fn still_locked(
     // checks if group is at edge, and moveable, if moveable, move
     // update checkvec, since we're only modelling now, sloppy and fast
     // is the name of the game
+    // DBUG println!("currently checking group ID {}", group.id);
     if neighbour == reference.len() {
         check_vec[start_index] = reference[start_index];
         check_vec[start_index + 1] = '0';
         return (check_vec, false);
     }
     if check_vec[neighbour].is_numeric() {
-        println!("{:?} groupid: {} still locked", check_vec, group.id);
+        println!("{:?} groupid: {} also locked", check_vec, group.id);
         return (check_vec, true);
     } else {
         check_vec[start_index] = reference[start_index];
