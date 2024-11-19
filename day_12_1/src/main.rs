@@ -56,8 +56,9 @@ fn arrangement_coordinator(line: String) {
     // DBUG }
     // DBUG println!("");
 
-    // Analyze ConditionMap to determine number of unique arrangements
-    // return number of unique arrangements
+    // Retrieve Condition map and analyze said map to
+    // determine how many arrangements of the groups of springs are
+    // possible
 }
 fn map_analyzer(map: &ConditionMap) -> usize {
     // -> usize
@@ -83,7 +84,7 @@ fn map_analyzer(map: &ConditionMap) -> usize {
     let mut groups = map.spring_groups.clone();
     let reference = &map.maps.springs;
     // open vector to track total freedoms in map
-    let mut freedom_counter: Vec<usize> = Vec::with_capacity(8);
+    let mut freedom_tracker: Vec<usize> = Vec::with_capacity(8);
     // filter groups with more than one freedom
     let mut free_groups: Vec<SpringGroup> = get_free_groups(&groups, &working_vector, &reference);
     // check if any group has more than one freedom, if no, return 1.
@@ -91,62 +92,165 @@ fn map_analyzer(map: &ConditionMap) -> usize {
         return 1;
     }
     // separate the single groups from the linked groups
-    let (mut single_groups, mut linked_groups) = group_classifier(&free_groups, &working_vector, &reference);
-
+    let (mut single_groups, mut linked_groups) =
+        group_organizer(&free_groups, &working_vector, &reference);
 
     return 0;
 }
-fn group_classifier(    
+fn group_organizer(
     groups: &Vec<SpringGroup>,
     working_vector: &Vec<char>,
     reference: &Vec<char>,
-) -> (Vec<SpringGroup>, Vec<SpringGroup>) {
-    // Separates single groups from linked groups by finding all single groups, 
-    // sticking them in the singles vector, and then put any remaining groups
-    // into the linked vector.
-    // Make discard pile vector to get rid of processed indices
-    let mut discard_pile: Vec<usize> = Vec::with_capacity(4);
-    // also clone groups, it will be changing
-    let mut group_work = groups.clone();
+) -> (Vec<SpringGroup>, Vec<Vec<SpringGroup>>) {
+    // Separates single groups from linked groups, and puts them into
+    // named vectors. Single groups are simply shoved into their vector
+    // while linked groups need some extra care, we want to sort the
+    // sets of linked groups into separate vectors, to be done with it.
     let mut singles: Vec<SpringGroup> = Vec::with_capacity(4);
-    let mut linked: Vec<SpringGroup> = Vec::with_capacity(4);
-    for (index, active_group) in groups.iter().enumerate(){
-        if is_single(&index, &active_group, &groups, &working_vector, &reference){
-            singles.push(group.clone());
-            discard_pile.push(index);
+    let mut linked: Vec<Vec<SpringGroup>> = Vec::with_capacity(4);
+    let mut bounds = groups.len();
+    let mut index: usize = 0;
+    loop {
+        if index == bounds {
+            break;
         }
-    }
-    // clean singles from groups vector.
-    discard_pile.reverse();
-    for index in discard_pile{
-        group_work.remove(index);
+        let active_group = groups[index].clone();
+        if is_single(&index, &active_group, &groups, &working_vector, &reference) {
+            singles.push(active_group);
+            index += 1;
+            continue;
+        } else {
+            // manage linked groups here
+        }
     }
 
     (singles, linked)
 }
 fn is_single(
-    index: &usize
+    index: &usize,
     active_group: &SpringGroup,
     groups: &Vec<SpringGroup>,
     working_vector: &Vec<char>,
     reference: &Vec<char>,
 ) -> bool {
-    // checks for singles, but there should be some way to immediatly
-    // filter for singles/linked in caller function so that 
-    // check: if at last index of groups your'e single can return
-    // true, because if the last one was linked, it would already
-    // be filtered into linked vector.
+    // checks for singles
     let bounds = groups.len();
-    // lets get rid of the easy cases first
+    let active_id = active_group.id;
+    // lazy checks first
     // if theres only one group in vector, group is single
-    if groups.len() == 1{
-        return true
+    // if group is last man standing, group is single
+    // if next group id is not contiguous, group is single
+    if bounds == 1 || index + 1 == bounds || active_id + 1 != groups[index + 1].id {
+        return true;
     }
-    // then we check if we are dealing with contigous group IDs
-    if index + 1 != bounds && active_group.id + 1 != groups[index + 1].id{
-        return true
+    // the next check is a bit more involved.
+    // We count active groups current freedoms
+    // Then we move all subsequent groups fully to the right
+    // We count the freedoms again. If the number
+    // of freedoms remain the same, the group is single.
+    // This should cover all cases.
+    let mut work_vec = working_vector.clone();
+    let current_freedom = freedom_counter(&active_group, &work_vec, &reference);
+    work_vec = shake_right(&index, &groups, &work_vec, &reference);
+    let new_freedom = freedom_counter(&active_group, &work_vec, &reference);
+    if current_freedom == new_freedom {
+        return true;
     }
-    return false
+    false
+}
+fn shake_right(
+    index: &usize,
+    groups: &Vec<SpringGroup>,
+    work_vec: &Vec<char>,
+    reference: &Vec<char>,
+) -> Vec<char> {
+    // makes all groups after active group as right leaning as possible.
+    // imagine picking the vector up by the active group, and shaking it
+    // so that the ones not held fall all the way to the right
+    // this ensures that freedom count is accurate, and might save a huge
+    // headache later on
+    // copy and clone whatever you need
+    let index = *index;
+    let mut working_vector = work_vec.clone();
+
+    // this loop goes backwards through the groups and moves them as far right
+    // as possible, the counter counts the index of the groups vector
+    // breaks when its through all subsequent groups in relation to the active
+    // group
+    let mut counter = work_vec.len();
+    loop {
+        counter -= 1;
+        if counter == index {
+            break;
+        }
+        // some semantic clarity
+        let active_group = groups[counter].clone();
+        let group_id = char::from_digit(active_group.id as u32, 10).unwrap();
+        let mut start_index = active_group.start_index;
+        let mut window = start_index;
+        let mut leading_edge = start_index + active_group.size - 1;
+        // clean working vector for current group
+        while window <= leading_edge {
+            working_vector[window] = reference[window];
+            window += 1;
+        }
+        // get freedoms of group, and substract one (to account for current pos)
+        // then apply as offset to start_index and leading edge, then place
+        // group ID into working vector
+        let offset = freedom_counter(&active_group, &working_vector, reference) - 1;
+        start_index += offset;
+        leading_edge += offset;
+        window = start_index;
+        while window <= leading_edge {
+            working_vector[window] = group_id;
+            window += 1;
+        }
+    }
+
+    working_vector
+}
+fn freedom_counter(
+    active_group: &SpringGroup,
+    working_vector: &Vec<char>,
+    reference: &Vec<char>,
+) -> usize {
+    // counts freedoms of a group by moving group step by step over
+    // working vector until it encounters another group or the edge of working vector
+    // Defining stuff for semantic clarity
+    let index = active_group.start_index;
+    let size = active_group.size;
+    let mut leading_edge = index + active_group.size - 1;
+    // window defines a range to the left of leading edge,
+    // representing the complete group in the working vector
+    let mut window = leading_edge - (size - 1);
+    let bounds = working_vector.len();
+    let valid = '?';
+    // this is the counter that tracks the freedoms
+    let mut freedoms: usize = 1;
+    // lets loop over our stuff!
+    loop {
+        // set index of next spot to consider, set valid flag to false
+        // check for break condition
+        let mut valid_flag = true;
+        let next = leading_edge + 1;
+        if next == bounds || working_vector[next].is_numeric() || reference[window] == '#' {
+            break;
+        }
+        // increment leading edge and window
+        leading_edge = next;
+        window = leading_edge - (size - 1);
+        let mut count = window;
+        // check if window covers only valid spots
+        while count <= leading_edge {
+            if working_vector[count] != valid {
+                valid_flag = false;
+                continue;
+            }
+            count += 1;
+        }
+        freedoms += 1;
+    }
+    freedoms
 }
 fn get_free_groups(
     groups: &Vec<SpringGroup>,
@@ -165,7 +269,6 @@ fn get_free_groups(
         }
         counter -= 1;
         if is_locked(&output_groups[counter], reference) {
-
             output_groups.remove(counter);
         }
     }
@@ -181,7 +284,6 @@ fn get_free_groups(
         let (check_vector, still_locked) =
             locked_deep(&output_groups[counter], &check_vector, &reference);
         if still_locked {
-
             output_groups.remove(counter);
         }
     }
@@ -409,7 +511,7 @@ fn unfuckify(
     loop {
         // check if its time to return
         if is_fucked(&work_vec) == false {
-            // checks if unfuckification put to groups into contact with
+            // checks if unfuckification put two groups into contact with
             // eachother. The dreaded unfuckify-fuckup
             if is_deeply_fucked(&groups) {
                 // DBUG println!("Source:         {:?}", reference);
@@ -443,7 +545,7 @@ fn unfuckify(
         }
         // now counter holds the id and index of the SpringGroup that needs to
         // change to cover the '#' and unfuck this particular hash_location lets
-        // hold this group in a variable
+        // hold this group in a named variable
 
         let mut active_group = groups[counter].clone();
         // lets also get the size of the group into a variable, for semantic
@@ -559,8 +661,9 @@ fn deep_unfuckify(
         // set a counter, since we are going backwards.
         // remember that the base assumption is that the further left a group is
         // placed, the more confident we are of its correctness
-        let mut counter = group_amount - 1;
+        let mut counter = group_amount;
         loop {
+            counter -= 1;
             // first some semantic clarity
             let group_to_check_index = groups[counter].start_index;
             let reference_group_placement =
@@ -568,7 +671,6 @@ fn deep_unfuckify(
             if group_to_check_index <= reference_group_placement {
                 break;
             }
-            counter -= 1;
         }
         // counter has now captured the index of the group we want to modify
         // lets continue being super explicit
@@ -584,7 +686,7 @@ fn deep_unfuckify(
         // Then check validity of the next step for active group
         // if not valid, search ahead until a valid placement is found
         // then insert active group.
-        // we have to assume the data is good so no overflow will ever happen
+        // we assume the data is good so no overflow will ever happen
         let left_group_range = left_group.start_index + left_group.size - 1;
         let mut active_group_range = active_group.start_index + active_group.size - 1;
         // cleaning work_vec of left group, set counter
