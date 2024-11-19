@@ -1,0 +1,10 @@
+fn is_locked_lazy(group: &SpringGroup, reference: &Vec<char>) -> bool {
+    // checks if group is locked in place by topography
+    let start = reference[group.start_index];
+    let next = group.start_index + group.size;
+    if start == '#' || next == reference.len() || reference[next] == '.' {
+        println!("{:?} groupid: {} locked", reference, group.id);
+        return true;
+    }
+    false
+}
