@@ -23,7 +23,7 @@ struct ConditionMap {
 
 fn main() {
     let now = Instant::now();
-    let path = "./data/day12";
+    let path = "./data/day12TT";
     let full_data = get_list_from_file(path);
     let mut value_accumulator: usize = 0;
     let mut counter = 1;
@@ -103,10 +103,10 @@ fn map_analyzer(map: &ConditionMap) -> usize {
     // print!("{:?}", linked_groups);
 
     for group in single_groups {
-        freedom_tracker.push(freedom_counter(&group, &working_vector, reference));
+        freedom_tracker.push(freedom_counter(&group, &working_vector, reference).0);
     }
     for groups in linked_groups {
-        let linked_value = linked_group_calculator(&groups, &working_vector, reference);
+        let linked_value = linked_group_counter(&groups, &working_vector, reference);
         // println!("Value of linked group: {}", linked_value);
         freedom_tracker.push(linked_value);
     }
@@ -115,44 +115,212 @@ fn map_analyzer(map: &ConditionMap) -> usize {
 
     return possible_arrangements;
 }
-fn linked_group_calculator(
+fn linked_group_counter(
     linked_group: &Vec<SpringGroup>,
     working_vector: &Vec<char>,
     reference: &Vec<char>,
 ) -> usize {
-    let mut output: usize = 0;
-    let mut freedom_accumulator: Vec<usize> = Vec::with_capacity(4);
-    for (index, sub) in linked_group.iter().enumerate() {
-        let work_vec = shake_right(&index, linked_group, working_vector, reference);
-        let active_group = linked_group[index].clone();
-        freedom_accumulator.push(freedom_counter(&active_group, &work_vec, reference));
+    let mut arrangement_counter: usize = 0;
+    // for now we are going to solve this using a counter system. Its naive as fuck
+    // and theres not a triangular number in sight. Slutty groups make things chaotic.
+    // Hopefully I will figure out an elegant solution later, but I just want to get
+    // done now.
+    // this function will iterate through all possible arrangements, add them up, and 
+    // send to ouput.
+    // Get editable vector
+    let mut working_vector = working_vector.clone();
+    let mut vector_cache = working_vector.clone();
+    let mut chached_flag: bool = false;
+    let mut linked_group = linked_group.clone();
+    // get some orientation
+    let mut current_group_index = linked_group.len() - 1;
+    let mut active_group = linked_group[current_group_index].clone();
+    println!("Current group index: {}", active_group.id);
+    // vector cache is for caching the first shift of group to the left of active vector
+    // this point will be called back once the group preceding that one again gets moving.
+    // the flag is so the cache only gets set when needed
+    let mut vector_cache = working_vector.clone();
+    let mut linked_cache = linked_group.clone();
+    let mut cached_flag: bool = false;
+    let mut reachback: usize = current_group_index - 1;
+    let mut reachback_cache = working_vector.clone();
+    let mut reachback_cached_flag: bool = false;
+    // lets spin up a loop
+    'outer: loop{
+        // first get number of freedoms from rightmost group and
+        // add to arrangement_counter
+        println!("working vector:      {:?}", working_vector);
+        arrangement_counter += freedom_counter(&active_group, &working_vector, reference).0;
+        println!("Current count:       {}", arrangement_counter);
+        // set working vector for next iteration
+        // if active group can move over once, do it
+        // this must be looped, current group might have to move over several times 
+        // to make room for the next group.
+        // loops within loops within loops, this is wonderful stuff 
+        loop{
+            if nudge_check(&linked_group, &current_group_index, &working_vector, reference){
+                (working_vector, linked_group) = nudge_one_step(&linked_group, &current_group_index, &working_vector, reference);
+                // Update active group data.
+                active_group = linked_group[current_group_index].clone();
+                //println!("Nudge check:         true");
+            } else {
+                if nudge_check(&linked_group, &(&reachback - 1), &working_vector, reference) == false {
+                    println!("breaks here?");
+                    break 'outer;
+                }
+                //println!("Nudge check:         false");
+                
+            }
+            // next group follows.
+            if nudge_check(&linked_group, &(current_group_index - 1), &working_vector, reference){
+                (working_vector, linked_group) = nudge_one_step(&linked_group, &(current_group_index - 1), &working_vector, reference);
+                if cached_flag == false{
+                    cached_flag = true;
+                    vector_cache = working_vector.clone();
+                    linked_cache = linked_group.clone();
+                    //println!("Cached vector:       {:?}", vector_cache);
+                }
+                break;
+            } else {
+                println!("Does it ever get here?");
+                // check if active vector can move more, if it can, move continue loop
+                if nudge_check(&linked_group, &current_group_index, &working_vector, reference){
+                    continue;
+                }
+                // if more motion is impossible, we move over to the next phase.
+                // check the reachback counter, if that is more than zero:
+                // retrieve cached arrangement 
+                // attempt to nudge group beyond reachback, nudge if possible.
+                // if not possible, check if beyond reachback has any freedoms left
+                // after new working vector is retrieved, try to nudge beyond reachback again.
+                // if it is possible, set new cache set flag to true aswell, for shits and giggles
+                // if not possible, we need a new cache, set cached flag to false
+                if reachback > 0 {
+                    println!("here?");
+                    working_vector = vector_cache.clone();
+                    linked_group = linked_cache.clone();
+                    if reachback_cached_flag == false{
+                        reachback_cached_flag == true;
+                        reachback_cache = working_vector.clone();
+                    }
+                    if nudge_check(&linked_group, &(&reachback - 1), &working_vector, reference){
+                        (working_vector, linked_group) = nudge_one_step(&linked_group, &(&reachback - 1), &working_vector, reference);
+                    } else {
+                        // check if any more freedoms, use is locked if locked, we are done, I think.
+                        if is_locked(&(reachback - 1), &linked_group, &working_vector, reference){
+                            if reachback - 1 == 0{
+                                break 'outer;
+                            } else {
+                                reachback -= 1;
+                                working_vector = reachback_cache.clone();
+                                if nudge_check(&linked_group, &(&reachback - 1), &working_vector, reference){
+                                    (working_vector, linked_group) = nudge_one_step(&linked_group, &(&reachback - 1), &working_vector, reference);
+                                }
+                            }
+                        } 
+                    }
+                    if nudge_check(&linked_group, &(&reachback - 1), &working_vector, reference){
+                        cached_flag = true;
+                       vector_cache = working_vector.clone();
+                       linked_cache = linked_cache.clone();
+                    } else {
+                        cached_flag = false;
+                    }
+                }
+            }
+
+
+        }
+
     }
 
-    // this first implementation assumes no groups with both shared and single values
-    // first calculate base number
-    let mut hash_counter: HashSet<usize> = Default::default();
-    for (index, el) in freedom_accumulator.clone().iter().enumerate() {
-        hash_counter.insert(*el);
-    }
-    if hash_counter.len() > 1 {
-        println!("{:?}", freedom_accumulator);
-    }
-
-    let base = (freedom_accumulator.len() - 2) + freedom_accumulator[0];
-
-    output = get_triangle(base);
-    output
+    arrangement_counter
 }
-fn get_triangle(base: usize) -> usize {
-    // calculates triangular numbers from their base width
-    let mut triangle: usize = 0;
-    if base % 2 == 0 {
-        triangle = (base + 1) * (base / 2);
-    } else {
-        triangle = base * ((base / 2) + 1);
+fn nudge_one_step(
+    linked_group: &Vec<SpringGroup>, 
+    current_group_index: &usize, 
+    working_vector: &Vec<char>, 
+    reference: &Vec<char>
+)-> (Vec<char>, Vec<SpringGroup>){
+    // moves active group one step to the right, returns both edited
+    // working vector and edited SpringGroup
+    let mut working_vector = working_vector.clone();
+    let mut linked_group = linked_group.clone();
+    let mut active_group = linked_group[*current_group_index].clone();
+    // clean active group from working vector
+    working_vector = lift_group(&active_group, &working_vector, &reference);
+    //println!("Old start:           {}", active_group.start_index);
+    // set new index on active group and replace in linked group
+    active_group.start_index += find_next(&active_group, &reference);
+    linked_group[*current_group_index] = active_group.clone();
+    //println!("New start:           {}", active_group.start_index);
+    // place group into working vector at new index
+    working_vector = place_group(&active_group, &working_vector);
+
+    (working_vector, linked_group)
+}
+fn place_group(active_group: &SpringGroup, working_vector: &Vec<char>) ->Vec<char> {
+    let mut working_vector = working_vector.clone();
+    let mut window = active_group.start_index;
+    let leading_edge = window + active_group.size - 1;
+    while window <= leading_edge {
+        working_vector[window] = char::from_digit(active_group.id.clone() as u32, 10).unwrap();
+        window += 1;
     }
 
-    return triangle;
+    working_vector
+}
+fn lift_group(active_group: &SpringGroup, working_vector: &Vec<char>, reference: &Vec<char>) ->Vec<char> {
+    let mut working_vector = working_vector.clone();
+    let mut window = active_group.start_index;
+    let leading_edge = window + active_group.size - 1;
+    while window <= leading_edge {
+        working_vector[window] = reference[window];
+        window += 1;
+    }
+    working_vector
+}
+fn find_next(active_group: &SpringGroup, reference: &Vec<char>)-> usize{
+    // returns new start index for active group
+    let index = active_group.start_index;
+    let size = active_group.size;
+    let mut leading_edge = index + active_group.size - 1;
+    let mut window = leading_edge - (size - 1);
+    let valid = '?';
+    let start = window;
+    let mut end = window;
+    loop{
+        let mut valid_flag = true;
+        leading_edge += 1;
+        window = leading_edge - (size - 1);
+        let mut count = window;
+        
+        while count <= leading_edge {
+            if reference[count] != valid {
+                valid_flag = false;
+            }
+            count += 1;
+        }
+        if valid_flag == true {
+            end = window;
+            break;
+        }   
+    }
+    let offset = end - start;
+    offset
+}
+fn nudge_check(
+    linked_group: &Vec<SpringGroup>, 
+    current_group_index: &usize, 
+    working_vector: &Vec<char>, 
+    reference: &Vec<char>)
+     -> bool {
+    // checks if current group has freedom to move
+    let active_group = linked_group[*current_group_index].clone();
+    if freedom_counter(&active_group, working_vector, reference).0 > 1 {
+        return true
+    }
+    false
 }
 fn arrangement_calculator(tracker: Vec<usize>) -> usize {
     // println!("arrangement_calculator started");
@@ -272,13 +440,13 @@ fn is_single(
     // This should cover all cases.
     let mut work_vec = working_vector.clone();
     // println!("is single calls freedom counter, to get current freedom");
-    let current_freedom = freedom_counter(&active_group, &work_vec, &reference);
+    let current_freedom = freedom_counter(&active_group, &work_vec, &reference).0;
     // println!("is single calls shake right");
     work_vec = shake_right(&index, &groups, &work_vec, &reference);
     // println!("shake right exited returning: {:?}", work_vec);
 
     // println!("is single calls freedom counter, to get new freedom");
-    let new_freedom = freedom_counter(&active_group, &work_vec, &reference);
+    let new_freedom = freedom_counter(&active_group, &work_vec, &reference).0;
     if current_freedom == new_freedom {
         // println!("is single calls exited, returned {:?}", true);
         return true;
@@ -328,7 +496,7 @@ fn shake_right(
         // then apply as offset to start_index and leading edge, then place
         // group ID into working vector
         // println!("shake right calls freedom counter to get offset value");
-        let offset = freedom_counter(&active_group, &working_vector, reference) - 1;
+        let offset = freedom_counter(&active_group, &working_vector, reference).1;
         start_index += offset;
         leading_edge += offset;
         window = start_index;
@@ -344,10 +512,12 @@ fn freedom_counter(
     active_group: &SpringGroup,
     working_vector: &Vec<char>,
     reference: &Vec<char>,
-) -> usize {
+) -> (usize, usize) {
     // println!("freedom counter started");
     // counts freedoms of a group by moving group step by step over
-    // working vector until it encounters another group or the edge of working vector
+    // working vector until it encounters another group or the edge of working 
+    // vectornow also counts the amount of steps a group has to take to get to 
+    // its end position, to fix a bug in the shake_right/freedom_counter complex.
     // Defining stuff for semantic clarity
     let index = active_group.start_index;
     let size = active_group.size;
@@ -359,11 +529,19 @@ fn freedom_counter(
     let valid = '?';
     // this is the counter that tracks the freedoms
     let mut freedoms: usize = 1;
+    // This is next one a patch to fix a bug.
+    // to get the correct offset for shake_right, i need to count the 
+    // amount of true steps a group takes through the spring map, I do
+    // this by capturing the index of the first and last position, and
+    // using the difference as the offset
+    let start = leading_edge;
+    let mut end = leading_edge;
     // lets loop over our stuff!
     // println!("looking at window between index {} and index {}", index, leading_edge);
     loop {
         // set index of next spot to consider, set valid flag to false
         // check for break condition
+
         let mut valid_flag = true;
         leading_edge += 1;
         window = leading_edge - (size - 1);
@@ -375,6 +553,7 @@ fn freedom_counter(
         if reference[index] == '#' {
             break;
         }
+        
         // check if all values in window are valid
         while count <= leading_edge {
             if reference[count] != valid {
@@ -388,11 +567,14 @@ fn freedom_counter(
         }
 
         if valid_flag == true {
+            end = leading_edge;
             freedoms += 1;
         }
     }
+    let offset = end - start;
     // println!("freedom counter exited, returned: {}", freedoms);
-    freedoms
+    // println!("freedoms: {}   offset: {}", freedoms, offset);
+    (freedoms, offset)
 }
 fn get_free_groups(
     groups: &Vec<SpringGroup>,
@@ -457,6 +639,7 @@ fn is_locked(
 
     // as of now, returns false positives.
     // false positives fixed, false negatives an issue
+    // false negatives fixed.
 
     // define next index after group, and its neighbour
 
@@ -479,7 +662,7 @@ fn is_locked(
     let check_vec = shake_right(&index, &groups, &working_vector, &reference);
     // println!("shake_right returned {:?}", check_vec);
     // println!("is locked called freedom_counter");
-    if freedom_counter(&groups[*index], &check_vec, &reference) == 1 {
+    if freedom_counter(&groups[*index], &check_vec, &reference).0 == 1 {
         //println!("is_locked - groupID: {} is locked", groups[*index].id);
         return true;
     }

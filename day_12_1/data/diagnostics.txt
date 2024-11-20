@@ -352,7 +352,150 @@ my output claims an outrageous amount of freedoms: [2,2,3,3,4,4]
 
 Theres a bug here somewhere...
 
+2024.11.20
 
+OK, found the bug. Still a bunch of slutty cases (yes, I have named the types, single, married, slutty).
+Good news is we know how to tell them apart, and, for now thats about it.
+Heres a slutty one from line 987 in the data set.
+
+????.??????? 2,1,2
+
+First we 'build' LLOC, of course.
+
+????.??????? 2,1,2
+00.1.22.....
+
+The freedom map looks like this: (according to my program, trust but verify, right..)
+
+????.??????? 2,1,2
+             3,5,6
+
+00.1.22..... LLOC
+.....00.1.22 RLOC
+00.1......22 freedoms 2: 6
+00......1.22 freedoms 1: 5
+.....00.1.22 freedoms 0: 4
+
+A closer inspection reveals another bug in my code, by now I'm not surprised.
+This day is a russian doll of edge cases, a cascade of descendingly minute
+differences that need consideration. Its probably freedom_counter, possibly
+shake_right again, those twoare a a shitty mess of shit which I cant wait 
+to properly refactor. 
+
+It was the freedom counter at fault, again. I've made the wrong assumption 
+that step = freedom. This is what happens when you work more than your head
+can keep up with. This bug is kinda a subtle one..
+
+Theres two functions: shake_right and freedom_counter.
+Freedom counter does what it says on the tin, counts how many freedoms
+a group has in any given arranagement. It will not optimize the arrangement.
+If the given arrangement is unoptimized, the count will be wrong.
+With this arrangement:
+00??.??1??22
+The freedom_counter will count 3 possible positions for [0], which is correct
+for the arrangement, but since [1] is wrongly placed, it is the wrong number 
+of max freedoms.
+There has to be some neat way to encode the exact amount of steps needed to move
+[group] from point A to point B...
+Use the index, of course.. calculate offset by index. Looks good at the moment
+the logic is getting fairly dense and hard to follow, however, we are so close!
+
+Back to our previously scheduled programme:
+The slutty ones on line 987.
+
+????.??????? 2,1,2
+             4,5,6
+
+00.1.22..... LLOC
+.....00.1.22 RLOC
+00.1......22 freedoms 2: 6
+00......1.22 freedoms 1: 5
+.....00.1.22 freedoms 0: 4
+
+They all share 4 freedoms that gives:
+3-2+4 = 5 base for the full group so 15
+
+now [0] has no freedoms left.
+[1] has 1 freedom left
+[2] has 2 freedoms left
+
+then we work out the shared freedoms between [1] and [2]
+2-2+1 = 1
+
+adding that to the previous 15 gives 16
+and then [2] is left with one single freedom.
+Making the dangerous assumption that my reasoning at about line 276 is correct
+** (single freedoms [2] * shared freedoms) + triangle of shared freedoms 
+is the answer.
+
+Question is, is it the min or max of shared freedoms? Can it be both?
+
+I sense some manual outworking coming, I'll try with both it looks like this
+( ( 1 * 5 ) + 1 ) + ( 1 * 4 ) + 15 ) = 6 + 19 = 25
+Now to control my assumptions.
+
+????.???????
+00.1.22.....
+00.1..22....
+00.1...22...
+00.1....22..
+00.1.....22.
+00.1......22
+00...1.22... 
+00...1..22.. 
+00...1...22. 
+00...1....22 
+00....1.22.. 
+00....1..22. 
+00....1...22
+00.....1.22.
+00.....1..22
+00......1.22
+.00..1.22... 
+.00..1..22..
+.00..1...22.
+.00..1....22
+.00...1.22..
+.00...1..22.
+.00...1...22
+.00....1.22.
+.00....1..22
+.00.....1.22
+..00.1.22... 
+..00.1..22..
+..00.1...22.
+..00.1....22
+..00..1.22.. 
+..00..1..22.
+..00..1...22
+..00...1.22.
+..00...1..22
+..00....1.22 
+.....00.1.22 
+
+My assumption was, not very surprising, way off, theres 37 arrangements in this badboy.
+How do we get to 37 from what we have?
+
+????.??????? 2,1,2
+             4,5,6
+
+lets pretend they all share 6 freedoms.
+3-2+6 = 7 = 28. Thats still not enough.
+AHA! This is the worst case I made a synthetic for up above.
+
+Lets engage in some quiet contemplation on the above manual writeout.
+
+from line 443 to line 444, [0] becomes a triple single and [1,2] becomes a linked pair with
+4 shared freedoms.
+
+which gives 3 * 10 = 30
+           [0] [1,2 triangle of 4]
+
+adding the six freedoms of [2] on top of that, and the final one gives 37 obviously
+but how to properly encode this?
+
+I think i'm going to implement a very naive solution. And get back to this at a later stage.
+I'm still quite sure theres a dignified way to do this, but I just want to get done.
 
 
                

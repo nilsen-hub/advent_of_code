@@ -8,3 +8,102 @@ fn is_locked_lazy(group: &SpringGroup, reference: &Vec<char>) -> bool {
     }
     false
 }
+
+fn freedom_counter(
+    active_group: &SpringGroup,
+    working_vector: &Vec<char>,
+    reference: &Vec<char>,
+) -> usize {
+    println!("freedom counter started");
+    // counts freedoms of a group by moving group step by step over
+    // working vector until it encounters another group or the edge of working vector
+    // Defining stuff for semantic clarity
+    let index = active_group.start_index;
+    let size = active_group.size;
+    let mut leading_edge = index + active_group.size - 1;
+    // window defines a range to the left of leading edge,
+    // representing the complete group in the working vector
+    let mut window = leading_edge - (size - 1);
+    let bounds = working_vector.len();
+    let valid = '?';
+    // this is the counter that tracks the freedoms
+    let mut freedoms: usize = 1;
+    // lets loop over our stuff!
+    println!("looking at window between index {} and index {}", index, leading_edge);
+    loop {
+        // set index of next spot to consider, set valid flag to false
+        // check for break condition
+        let mut valid_flag = true;
+        let next = leading_edge + 1;
+        // bug hunting, i think this first check is fine
+        if next == bounds || working_vector[next].is_numeric() || reference[window] == '#' {
+            println!("Did not pass first check");
+            break;
+        }
+        // increment leading edge and window
+        leading_edge = next;
+        window = leading_edge - (size - 1);
+        let mut count = window;
+        // check if window covers only valid spots
+        while count <= leading_edge {
+            if reference[count] != valid {
+                println!("Did not pass second check");
+                valid_flag = false;
+            }
+            // This is kinda ugly, but right now its the simplest way to avoid
+            // OOB errors. Checks if next symbol after leading edge is numeric
+            if count + 1 != bounds && working_vector[count + 1].is_numeric(){
+                println!("Did not pass third check");
+                valid_flag = false;
+            }
+            count += 1;
+        }
+        if valid_flag == true{
+            freedoms += 1;
+        }
+    }
+    println!("freedom counter exited, returned: {}", freedoms);
+    freedoms
+}
+fn linked_group_calculator(
+    linked_group: &Vec<SpringGroup>,
+    working_vector: &Vec<char>,
+    reference: &Vec<char>,
+) -> usize {
+    let mut output: usize = 0;
+    let mut freedom_accumulator: Vec<usize> = Vec::with_capacity(4);
+    println!("{:?}", reference);
+    for (index, sub) in linked_group.iter().enumerate() {
+        let work_vec = shake_right(&index, linked_group, working_vector, reference);
+        println!("{:?} <- from this", working_vector);
+        println!("{:?} <- to this (right_shake)", work_vec);
+        let active_group = linked_group[index].clone();
+        freedom_accumulator.push(freedom_counter(&active_group, &work_vec, reference).0);
+    }
+
+    // this first implementation assumes no groups with both shared and single values
+    // first calculate base number
+    let mut hash_counter: HashSet<usize> = Default::default();
+    for (index, el) in freedom_accumulator.clone().iter().enumerate() {
+        hash_counter.insert(*el);
+    }
+    if hash_counter.len() > 1 {
+        println!("{:?}", freedom_accumulator);
+    }
+
+    let base = (freedom_accumulator.len() - 2) + freedom_accumulator[0];
+
+    output = get_triangle(base);
+    output
+}
+fn get_triangle(base: usize) -> usize {
+    // calculates triangular numbers from their base width
+    let mut triangle: usize = 0;
+    if base % 2 == 0 {
+        triangle = (base + 1) * (base / 2);
+    } else {
+        triangle = base * ((base / 2) + 1);
+    }
+
+    return triangle;
+}
