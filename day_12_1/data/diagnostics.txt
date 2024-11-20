@@ -35,7 +35,7 @@ group one is locked, so not a part of consideration (minimum case is all groups 
 case:
 ?###???????? 3,2,1 = 10
 left leaning optimized case:
-1 and 2 is locked three has four degrees
+1 and 2 is locked 3 has four degrees
 lets try to add that to our position sum:
 positions = 4
 .111.22.3...
@@ -78,13 +78,13 @@ loop
     triangle += base
 
 
-Which brings us to this guy on line 88, 4 linked pairs. Maybe theres some way to extend the
+Which brings us to this guy on line 89, 4 linked pairs. Maybe theres some way to extend the
 idea of drawing a conclusion based on the shared degrees of freedom.
 
 On the surface this looks like a simple multiplication.
 Theres three degrees of freedom shared among four groups.
 3 * 4 = 12
-but I'm suddenly not so sure this is a complete truth-table, im gonna make a new one on line 102
+but I'm suddenly not so sure this is a complete truth-table, im gonna make a new one on line 103
 
 ???????????????????? 1,5,6,3 = 12
 1.22222.333333.444..
@@ -164,7 +164,7 @@ then 1 and 2, remember the last arrangement above is shared
 ..1.22222.333333.444 
 1...22222.333333.444
 
-I had to make it a bit ugly to land at that arrangement on line 164
+I had to make it a bit ugly to land at that arrangement on line 165
 Now we have two more linked groups with on group with 1 alone and 2,3,4 in a group
 
 and again recall that the final line above is shared
@@ -196,16 +196,16 @@ lets just write it out, so that we can be certain.
 1...22222.333333.444
 
 1..22222.333333.444. 
-////////////////////.1..22222.333333.444 Ok, again I'm thwarted by reality, this is on 193, so theres only 3 possible arrangements
+////////////////////.1..22222.333333.444 Ok, again I'm thwarted by reality, this is on 194, so theres only 3 possible arrangements
 .1.22222.333333.444. at this level
 ..1.22222.333333.444 next is 1,2,3 and 4
 
 .1.22222.333333..444 which I can say, right off the bat, has 4 covered arrangements all ready FUCK
-                     and maybe more? line 184, 185 and 186 grabs three straight away
-                     line 199 and 200 takes two more which makes 5, lets see if we can spot the missing one
-                     and there it is good news is that what I wrote below actually makes some sense now.
+                     and maybe more? line 185, 186 and 187 grabs three straight away
+                     line 200 and 201 takes two more which makes 5, lets see if we can spot the missing one
+                     and there it is! Good news is that what I wrote below actually makes some sense now.
 
-I continue at line 224, between here and there is some reasoning on a false assumption.
+I continue at line 225, between here and there is some reasoning on a false assumption.
 
 So the problem now, is how do I determine the base of the triangle
 4 linked groups sharing 3 degrees of freedom made a base of 6
@@ -227,7 +227,7 @@ We have learned even more!
 
 ???????????????????? 1,5,6,3 = 15 
 
-This is neat, it flips the bit on line 222
+This is neat, it flips the bit on line 223
 15 is also a triangular number, only with a base of 5.
 
 4 groups sharing 3 degrees makes a base of 5.
@@ -292,7 +292,7 @@ Lets do some observations:
 - group 0 has two independent freedoms in the base case, this arrangement
   would cause my current strategy to fail. As i currently consider any group
   with freedoms in the base case to be pure single. This is obviously not true, 
-  so needs correcting
+  so needs correcting* IS CORRECTED
 - group 1 has no freedoms in the base case
 - group 2 has 7 freedoms in the base case
 
@@ -333,7 +333,24 @@ Yes they are shared.
 
 Ok, I need to do some code now before my head explodes.. Knowing full well I don't fully understand
 
+2024.11.20
+Finally got the test set approved, and as I suspected, the case of uncertain partners comes up.
+It actually comes up quite a bit. Good news is, that a unified solution to this problem will
+make everything work out well.
 
+Bad news is I'm tired..
+Well, this is from line 144 of the data set provided, and it pretty much is a "worst case".
+Lets get to it then..
+
+?????????#??.??????. 1,6,1,1,1,1
+
+my output claims an outrageous amount of freedoms: [2,2,3,3,4,4]
+
+?????????#??.??????. 1,6,1,1,1,1
+                     2,2,3,3,4,4 thats nicer.. lets get the LLOC down
+0.111111.1.1.1.1....
+
+Theres a bug here somewhere...
 
 
 

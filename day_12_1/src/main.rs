@@ -1,5 +1,6 @@
 #![allow(unused)]
-use std::{clone, fs::read_to_string, iter::Map, ops::Index, time::Instant};
+use core::hash;
+use std::{clone, collections::HashSet, fs::read_to_string, iter::Map, ops::Index, time::Instant};
 
 #[derive(Debug, Clone)]
 struct SpringGroup {
@@ -22,7 +23,7 @@ struct ConditionMap {
 
 fn main() {
     let now = Instant::now();
-    let path = "./data/day12T";
+    let path = "./data/day12";
     let full_data = get_list_from_file(path);
     let mut value_accumulator: usize = 0;
     let mut counter = 1;
@@ -41,14 +42,14 @@ fn arrangement_coordinator(line: String) -> usize {
     // -> usize
     // parse string line into Vec<char> and Vec<usize>
     // and make maps struct
-    println!("arrangement_coordinator started");
+    // println!("arrangement_coordinator started");
     let (springs, groups) = parse_line(line);
     let maps = Maps { springs, groups };
     // Get ConditionMap with build_cm()
     let map = build_cm(maps);
     let arrangement_amount = map_analyzer(&map);
-    println!("arrangement_coordinator exited, returned {}", arrangement_amount);
-    return arrangement_amount
+    // println!("arrangement_coordinator exited, returned {}", arrangement_amount);
+    return arrangement_amount;
     // DBUG for c in map.base_arrangement{
     // DBUG     print!("{}", c);
     // DBUG }
@@ -63,7 +64,7 @@ fn arrangement_coordinator(line: String) -> usize {
     // possible
 }
 fn map_analyzer(map: &ConditionMap) -> usize {
-    println!("map_analyzer started");
+    // println!("map_analyzer started");
     // -> usize
     // Determines how many possible valid arrangements of groups in maps
     // exists.
@@ -75,9 +76,9 @@ fn map_analyzer(map: &ConditionMap) -> usize {
     // a linked group shares freedoms with one or more other groups, so
     // the number of freedoms at any moment is determined by the position of
     // another group.
-    // groups can be both single and linked at the same time, 
-    // where they have some independent freedom and some shared freedoms. 
-    // I havent actually studied a map with this characteristic, 
+    // groups can be both single and linked at the same time,
+    // where they have some independent freedom and some shared freedoms.
+    // I havent actually studied a map with this characteristic,
     // but I have to account for it.
     // multiplying the freedoms of each group (linked groups count as one)
     // will give us the answer to how many possible arrangements exists in the
@@ -98,53 +99,68 @@ fn map_analyzer(map: &ConditionMap) -> usize {
     // separate the single groups from the linked groups
     let (mut single_groups, mut linked_groups) =
         group_organizer(&free_groups, &working_vector, &reference);
-   
-    for group in single_groups{
+
+    // print!("{:?}", linked_groups);
+
+    for group in single_groups {
         freedom_tracker.push(freedom_counter(&group, &working_vector, reference));
     }
-    for groups in linked_groups{
+    for groups in linked_groups {
         let linked_value = linked_group_calculator(&groups, &working_vector, reference);
-        println!("Value of linked group: {}", linked_value);
+        // println!("Value of linked group: {}", linked_value);
         freedom_tracker.push(linked_value);
     }
-    
-    let possible_arrangements= arrangement_calculator(freedom_tracker);
+
+    let possible_arrangements = arrangement_calculator(freedom_tracker);
 
     return possible_arrangements;
 }
-fn linked_group_calculator(linked_group: &Vec<SpringGroup>, working_vector: &Vec<char>, reference: &Vec<char>) -> usize {
+fn linked_group_calculator(
+    linked_group: &Vec<SpringGroup>,
+    working_vector: &Vec<char>,
+    reference: &Vec<char>,
+) -> usize {
     let mut output: usize = 0;
     let mut freedom_accumulator: Vec<usize> = Vec::with_capacity(4);
-    for (index, sub) in linked_group.iter().enumerate(){
+    for (index, sub) in linked_group.iter().enumerate() {
         let work_vec = shake_right(&index, linked_group, working_vector, reference);
         let active_group = linked_group[index].clone();
         freedom_accumulator.push(freedom_counter(&active_group, &work_vec, reference));
     }
+
     // this first implementation assumes no groups with both shared and single values
     // first calculate base number
+    let mut hash_counter: HashSet<usize> = Default::default();
+    for (index, el) in freedom_accumulator.clone().iter().enumerate() {
+        hash_counter.insert(*el);
+    }
+    if hash_counter.len() > 1 {
+        println!("{:?}", freedom_accumulator);
+    }
+
     let base = (freedom_accumulator.len() - 2) + freedom_accumulator[0];
-    
+
     output = get_triangle(base);
     output
 }
 fn get_triangle(base: usize) -> usize {
     // calculates triangular numbers from their base width
     let mut triangle: usize = 0;
-    if base % 2 == 0{
-        triangle = (base + 1) * (base / 2); 
+    if base % 2 == 0 {
+        triangle = (base + 1) * (base / 2);
     } else {
         triangle = base * ((base / 2) + 1);
     }
 
-    return triangle
+    return triangle;
 }
 fn arrangement_calculator(tracker: Vec<usize>) -> usize {
-    println!("arrangement_calculator started");
-    let mut output:usize = 1;
-    for el in tracker{
+    // println!("arrangement_calculator started");
+    let mut output: usize = 1;
+    for el in tracker {
         output *= el;
     }
-    println!("arrangement_calculator exited, returning {}", output);
+    // println!("arrangement_calculator exited, returning {}", output);
     output
 }
 fn group_organizer(
@@ -152,7 +168,7 @@ fn group_organizer(
     working_vector: &Vec<char>,
     reference: &Vec<char>,
 ) -> (Vec<SpringGroup>, Vec<Vec<SpringGroup>>) {
-    println!("group_organizer started");
+    // println!("group_organizer started");
     // Separates single groups from linked groups, and puts them into
     // named vectors. Single groups are simply shoved into their vector
     // while linked groups need some extra care, we want to sort the
@@ -167,38 +183,44 @@ fn group_organizer(
         }
         let active_group = groups[index].clone();
         if is_single(&index, &active_group, &groups, &working_vector, &reference) {
-            println!("{:?} group {} is single!", reference, active_group.id);
+            // println!("{:?} group {} is single!", reference, active_group.id);
             singles.push(active_group);
             index += 1;
-            
         } else {
-            let linked_group = linked_group_detective(&index, &active_group, groups, working_vector, reference);
+            let linked_group =
+                linked_group_detective(&index, &active_group, groups, working_vector, reference);
             index += linked_group.len();
             let mut id_linked_groups: Vec<usize> = Vec::with_capacity(4);
-            for el in &linked_group{
+            for el in &linked_group {
                 id_linked_groups.push(el.id.clone());
             }
             linked.push(linked_group);
-            println!("{:?} groups {:?} are linked!", reference, id_linked_groups);
+            // println!("{:?} groups {:?} are linked!", reference, id_linked_groups);
         }
     }
-    println!("group_organizer exited, returning singles.len: {} and linked.len: {}", singles.len(), linked.len());
+    // println!("group_organizer exited, returning singles.len: {} and linked.len: {}", singles.len(), linked.len());
     (singles, linked)
 }
-fn linked_group_detective(    
+fn linked_group_detective(
     index: &usize,
     active_group: &SpringGroup,
     groups: &Vec<SpringGroup>,
     working_vector: &Vec<char>,
-    reference: &Vec<char>,) -> Vec<SpringGroup> {
-    println!("linked_group_detective started");
+    reference: &Vec<char>,
+) -> Vec<SpringGroup> {
+    // println!("linked_group_detective started");
     let mut output_vector: Vec<SpringGroup> = Vec::with_capacity(4);
     // determines what spring groups are to be included in the linked group
     // if group 0 was marked as linked, we know for a fact group 1 is also linked
-    // since we are searching left to right, if is_single(group 1) = false, 
+    // since we are searching left to right, if is_single(group 1) = false,
     // then group 2 is also part of linked group, and so on.
     // active group will change, so need mutable variable for it.
     // make index mutable
+
+    // turns out this implementation makes a wrong assumption, it needs to
+    // account for separate linked groups next to eachother. We have to be
+    // certain that one group affects another group before moving on.
+
     let mut active_group = active_group.clone();
     let mut index = *index;
     let bounds = groups.len();
@@ -206,21 +228,23 @@ fn linked_group_detective(
     loop {
         output_vector.push(active_group.clone());
         index += 1;
-        if index == bounds{
+        if index == bounds {
             break;
         }
         active_group = groups[index].clone();
-        println!("linked_group_detective calls is_single");
-        if is_single(&index, &active_group, groups, working_vector, reference) == false{
+        // is single is not a good check for this, we need to do the
+        // count, right shake, count method for this..
+        if is_single(&index, &active_group, groups, working_vector, reference) == false {
             continue;
         } else {
             output_vector.push(active_group.clone());
             break;
         }
     }
-    println!("linked_group_detective exited, returning vector len: {}", output_vector.len());
+    // println!("linked_group_detective exited, returning vector len: {}", output_vector.len());
     output_vector
 }
+
 fn is_single(
     index: &usize,
     active_group: &SpringGroup,
@@ -228,8 +252,8 @@ fn is_single(
     working_vector: &Vec<char>,
     reference: &Vec<char>,
 ) -> bool {
-    println!("is_single started");
-    println!("index is {}", index);
+    // println!("is_single started");
+    // println!("index is {}", index);
     // checks for singles
     let bounds = groups.len();
     let active_id = active_group.id;
@@ -247,17 +271,19 @@ fn is_single(
     // of freedoms remain the same, the group is single.
     // This should cover all cases.
     let mut work_vec = working_vector.clone();
-    println!("is single calls freedom counter, to get current freedom");
+    // println!("is single calls freedom counter, to get current freedom");
     let current_freedom = freedom_counter(&active_group, &work_vec, &reference);
-    println!("is single calls shake right");
+    // println!("is single calls shake right");
     work_vec = shake_right(&index, &groups, &work_vec, &reference);
-    println!("is single calls freedom counter, to get new freedom");
+    // println!("shake right exited returning: {:?}", work_vec);
+
+    // println!("is single calls freedom counter, to get new freedom");
     let new_freedom = freedom_counter(&active_group, &work_vec, &reference);
     if current_freedom == new_freedom {
-        println!("is single calls exited, returned {:?}", true);
+        // println!("is single calls exited, returned {:?}", true);
         return true;
     }
-    println!("is single calls exited, returned {:?}", false);
+    // println!("is single calls exited, returned {:?}", false);
     false
 }
 fn shake_right(
@@ -266,7 +292,7 @@ fn shake_right(
     working_vector: &Vec<char>,
     reference: &Vec<char>,
 ) -> Vec<char> {
-    println!("shake right started");
+    // println!("shake right started");
     // makes all groups after active group as right leaning as possible.
     // imagine picking the vector up by the active group, and shaking it
     // so that the ones not held fall all the way to the right
@@ -288,6 +314,7 @@ fn shake_right(
         }
         // some semantic clarity
         let active_group = groups[counter].clone();
+        // println!("{}", active_group.id);
         let group_id = char::from_digit(active_group.id as u32, 10).unwrap();
         let mut start_index = active_group.start_index;
         let mut window = start_index;
@@ -300,7 +327,7 @@ fn shake_right(
         // get freedoms of group, and substract one (to account for current pos)
         // then apply as offset to start_index and leading edge, then place
         // group ID into working vector
-        println!("shake right calls freedom counter to get offset value");
+        // println!("shake right calls freedom counter to get offset value");
         let offset = freedom_counter(&active_group, &working_vector, reference) - 1;
         start_index += offset;
         leading_edge += offset;
@@ -310,7 +337,7 @@ fn shake_right(
             window += 1;
         }
     }
-    // println!("shake right exited returning: {:?}", working_vector);
+
     working_vector
 }
 fn freedom_counter(
@@ -318,7 +345,7 @@ fn freedom_counter(
     working_vector: &Vec<char>,
     reference: &Vec<char>,
 ) -> usize {
-    println!("freedom counter started");
+    // println!("freedom counter started");
     // counts freedoms of a group by moving group step by step over
     // working vector until it encounters another group or the edge of working vector
     // Defining stuff for semantic clarity
@@ -333,7 +360,7 @@ fn freedom_counter(
     // this is the counter that tracks the freedoms
     let mut freedoms: usize = 1;
     // lets loop over our stuff!
-    println!("looking at window between index {} and index {}", index, leading_edge);
+    // println!("looking at window between index {} and index {}", index, leading_edge);
     loop {
         // set index of next spot to consider, set valid flag to false
         // check for break condition
@@ -342,10 +369,10 @@ fn freedom_counter(
         window = leading_edge - (size - 1);
         let mut count = window;
         // break condition
-        if leading_edge == bounds || working_vector[leading_edge].is_numeric(){
+        if leading_edge == bounds || working_vector[leading_edge].is_numeric() {
             break;
         }
-        if reference[window] == '#'{
+        if reference[index] == '#' {
             break;
         }
         // check if all values in window are valid
@@ -356,15 +383,15 @@ fn freedom_counter(
             count += 1;
         }
         let next = leading_edge + 1;
-        if next != bounds && working_vector[next].is_numeric(){
+        if next != bounds && working_vector[next].is_numeric() {
             valid_flag = false;
         }
 
-        if valid_flag == true{
+        if valid_flag == true {
             freedoms += 1;
         }
     }
-    println!("freedom counter exited, returned: {}", freedoms);
+    // println!("freedom counter exited, returned: {}", freedoms);
     freedoms
 }
 fn get_free_groups(
@@ -376,6 +403,7 @@ fn get_free_groups(
     // works out what groups have any freedoms at all
     let mut output_groups = groups.clone();
     let mut counter = output_groups.len();
+    // println!("{:?}", working_vector);
     // let mut check_vector = working_vector;
     // removes obviously locked groups
     // loop {
@@ -401,16 +429,26 @@ fn get_free_groups(
             output_groups.remove(counter);
         }
     }
-    println!("get_free_groups exited");
+    // println!("get_free_groups exited");
     output_groups
+}
+fn is_locked_lazy(group: &SpringGroup, reference: &Vec<char>) -> bool {
+    // checks if group is locked in place by topography
+    let start = reference[group.start_index];
+    let next = group.start_index + group.size;
+    if start == '#' || next == reference.len() {
+        // println!("{:?} groupid: {} locked", reference, group.id);
+        return true;
+    }
+    false
 }
 fn is_locked(
     index: &usize,
     groups: &Vec<SpringGroup>,
     working_vector: &Vec<char>,
     reference: &Vec<char>,
-) ->  bool {
-    println!("is_locked started, considering groupID: {}", groups[*index].id);
+) -> bool {
+    // println!("is_locked started, considering groupID: {}", groups[*index].id);
     // -> (Vec<char>, bool)
     // checks if group is locked, even if stuff moves around. This is very
     // step by step, final, optimized solution will do more stuff at once
@@ -418,29 +456,34 @@ fn is_locked(
     // cognitive load is a beast, and this one is full of it.
 
     // as of now, returns false positives.
+    // false positives fixed, false negatives an issue
 
     // define next index after group, and its neighbour
-    
+
     let mut start_index = groups[*index].start_index;
     let next = start_index + groups[*index].size;
     let neighbour = next + 1;
-
+    let lazy = is_locked_lazy(&groups[*index], reference);
+    if lazy {
+        return true;
+    }
     // checks if group is at edge, and moveable, if moveable, move
     // update checkvec, since we're only modelling now, sloppy and fast
     // is the name of the game
     // DBUG println!("currently checking group ID {}", group.id);
+
     if neighbour == reference.len() {
         return false;
     }
-    println!("is_locked calls shake right");
+    // println!("is_locked calls shake right");
     let check_vec = shake_right(&index, &groups, &working_vector, &reference);
-    println!("shake_right returned {:?}", check_vec);
-    println!("is locked called freedom_counter");
+    // println!("shake_right returned {:?}", check_vec);
+    // println!("is locked called freedom_counter");
     if freedom_counter(&groups[*index], &check_vec, &reference) == 1 {
-        println!("is_locked - groupID: {} is locked", groups[*index].id);
-        return true
-    } 
-    println!("is_locked - groupID: {} is not locked", groups[*index].id);
+        //println!("is_locked - groupID: {} is locked", groups[*index].id);
+        return true;
+    }
+    // println!("is_locked - groupID: {} is not locked", groups[*index].id);
     false
 }
 fn build_cm(maps: Maps) -> ConditionMap {
