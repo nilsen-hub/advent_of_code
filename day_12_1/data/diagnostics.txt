@@ -49,16 +49,18 @@ can be described by a triangular number with a base equal to the largest degree 
 
 
 ?###???????? 3,2,1 = 10
-.111.22.3...
-.111..22.3..
-.111...22.3.
-.111....22.3
-.111...22..3
-.111..22...3
-.111.22....3
-.111.22...3.
-.111..22..3.
-.111.22..3..
+.111.22.3....
+.111..22.3...
+.111...22.3..
+.111....22.3.
+.111...22..3.
+.111..22...3.
+.111.22....3.
+.111.22...3..
+.111..22..3..
+.111.22..3...
+.
+5+4+3+2+1 = 
 
 lets make a different case.. first remove one degree from the above example. That would give a base of three
 the triangular number of a base of three is 6.
@@ -237,6 +239,14 @@ Which we can generalize, and thats kinda cool.
 1 group sharing 5 freedoms gives a plain number, in this case 5
 2 groups sharing 5 freedoms gives a triangular number with a base of 5 (sums to 15)
 
+0.1....
+0..1...
+0...1..
+0....1.
+0.....1
+.0..1..
+.0...1.
+.0....1
 So any n number of groups larger than 1, sharing x amount of freedoms will 
 give a triangle with a base of n - 2 + x
 
@@ -251,7 +261,8 @@ fn triangulate(base:int) -> int
 Here we try something new, I have buildt a synthetic case based off of this input:
 
 ?###???????? 3,2,1
-
+000.22.1....
+.000.22.1...
 I have made a case from this, where the third group is both single and linked.
 This is an important case to understand, and perhaps its important to understand 
 more variations of the case. But for now, lets look at: 
@@ -497,5 +508,131 @@ but how to properly encode this?
 I think i'm going to implement a very naive solution. And get back to this at a later stage.
 I'm still quite sure theres a dignified way to do this, but I just want to get done.
 
+Naive solution was horrible, so, I'm back to here.
 
-               
+????.??????? 2,1,2
+             4,5,6
+
+So we need to figure out, for each group, how many freedoms are shared.
+Lets go back to way before and look at this:
+
+???????????????????? 1,5,6,3
+0.11111.222222.333..
+0.11111.222222..333.
+0.11111.222222...333
+0.11111..222222.333.
+0.11111..222222..333
+0.11111...222222.333
+0..11111.222222.333.
+0..11111.222222..333
+0..11111..222222.333
+0...11111.222222.333
+.0.11111.222222.333.
+.0.11111.222222..333               
+.0.11111..222222.333
+.0..11111.222222.333
+..0.11111.222222.333
+
+??????????????????????????  1,5,6,3,4 (pred, 28)
+0.11111.222222.333.4444...
+0.11111.222222.333..4444..
+0.11111.222222.333...4444.
+0.11111.222222.333....4444
+0.11111.222222..333.4444..
+0.11111.222222..333..4444.
+0.11111.222222..333...4444
+0.11111.222222...333.4444.
+0.11111.222222...333..4444
+0.11111.222222....333.4444
+0.11111..222222.333.4444..
+0.11111..222222.333..4444.
+0.11111..222222.333...4444
+0.11111..222222..333.4444.
+0.11111..222222..333..4444
+0.11111..222222...333.4444
+0.11111...222222.333.4444.
+0.11111...222222.333..4444
+0.11111....222222.333.4444
+0..11111.222222.333.4444..
+0..11111.222222.333..4444.
+0..11111.222222.333...4444
+0..11111.222222..333.4444.
+0..11111.222222..333..4444
+0..11111.222222...333.4444
+0..11111..222222.333.4444.
+0..11111..222222.333..4444
+0..11111...222222.333.4444
+0...11111.222222.333.4444.
+0...11111.222222.333..4444
+0...11111..222222.333.4444
+0....11111.222222.333.4444
+.0.11111.222222.333.4444..
+.0.11111.222222.333..4444.
+.0.11111.222222.333...4444
+.0.11111.222222..333.4444.
+.0.11111.222222..333..4444
+.0.11111.222222...333.4444
+.0.11111..222222.333.4444.
+.0.11111..222222.333..4444
+.0.11111...222222.333.4444
+.0..11111.222222.333.4444.
+.0..11111.222222.333..4444
+.0..11111..222222.333.4444
+.0...11111.222222.333.4444
+..0.11111.222222.333.4444.
+..0.11111.222222.333..4444
+..0.11111..222222.333.4444
+..0..11111.222222.333.4444
+...0.11111.222222.333.4444
+
+Thats annoying, and refreshing. I decided to put my line 250 assertion to the test.
+Of course it falls completely apart. Let me restate that sentence here:
+
+"So any n number of groups larger than 1, sharing x amount of freedoms will 
+give a triangle with a base of n - 2 + x"
+
+There seems to an exponential growth of possibilites with every added group, which
+really should not come as a surprise. It think we can learn something by breaking
+this further down.
+
+5 groups sharing 4 freedoms give 50 permutations. How on earth to be move from 
+one to the other?
+
+One possible way could be to take the triangular number of the shared freedoms, in
+this case 10, and multiply by the amount of groups.
+
+Apllying that logic to our old friend here:
+???????????????????? 1,5,6,3 
+0.11111.222222.333..
+
+4 groups all sharing 3 freedoms, triangle of 3 is 6, 6*4 is 24
+so nowhere close to true.
+
+Restating some basic facts:
+Single groups are multiplied
+Married groups of two have freedoms equal to the triangle of a base the size
+of their shared freedoms.
+
+Aside from that, I have no clue at the moment. And it really bugs me..
+Looking at this again:
+???????????????????? 1,5,6,3
+lets count the different possible groupings
+0,1,2,3
+[2,3]
+[1,2]
+[0,1]
+[0,1,2]
+[1,2,3]
+i think that is all..
+lets do the same with this synthetic one:
+??????????????????????????  1,5,6,3,4
+0,1,2,3,4
+[3,4]
+[2,3]
+[1,2]
+[0,1]
+[4,3,2]
+[3,2,1]
+[2,1,0]
+[4,3,2,1]
+[3,2,1,0]

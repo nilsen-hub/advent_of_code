@@ -29,7 +29,10 @@ fn freedom_counter(
     // this is the counter that tracks the freedoms
     let mut freedoms: usize = 1;
     // lets loop over our stuff!
-    println!("looking at window between index {} and index {}", index, leading_edge);
+    println!(
+        "looking at window between index {} and index {}",
+        index, leading_edge
+    );
     loop {
         // set index of next spot to consider, set valid flag to false
         // check for break condition
@@ -52,13 +55,13 @@ fn freedom_counter(
             }
             // This is kinda ugly, but right now its the simplest way to avoid
             // OOB errors. Checks if next symbol after leading edge is numeric
-            if count + 1 != bounds && working_vector[count + 1].is_numeric(){
+            if count + 1 != bounds && working_vector[count + 1].is_numeric() {
                 println!("Did not pass third check");
                 valid_flag = false;
             }
             count += 1;
         }
-        if valid_flag == true{
+        if valid_flag == true {
             freedoms += 1;
         }
     }

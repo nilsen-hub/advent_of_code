@@ -125,7 +125,7 @@ fn linked_group_counter(
     // and theres not a triangular number in sight. Slutty groups make things chaotic.
     // Hopefully I will figure out an elegant solution later, but I just want to get
     // done now.
-    // this function will iterate through all possible arrangements, add them up, and 
+    // this function will iterate through all possible arrangements, add them up, and
     // send to ouput.
     // Get editable vector
     let mut working_vector = working_vector.clone();
@@ -146,7 +146,7 @@ fn linked_group_counter(
     let mut reachback_cache = working_vector.clone();
     let mut reachback_cached_flag: bool = false;
     // lets spin up a loop
-    'outer: loop{
+    'outer: loop {
         // first get number of freedoms from rightmost group and
         // add to arrangement_counter
         println!("working vector:      {:?}", working_vector);
@@ -154,27 +154,48 @@ fn linked_group_counter(
         println!("Current count:       {}", arrangement_counter);
         // set working vector for next iteration
         // if active group can move over once, do it
-        // this must be looped, current group might have to move over several times 
+        // this must be looped, current group might have to move over several times
         // to make room for the next group.
-        // loops within loops within loops, this is wonderful stuff 
-        loop{
-            if nudge_check(&linked_group, &current_group_index, &working_vector, reference){
-                (working_vector, linked_group) = nudge_one_step(&linked_group, &current_group_index, &working_vector, reference);
+        // loops within loops within loops, this is wonderful stuff
+        loop {
+            if nudge_check(
+                &linked_group,
+                &current_group_index,
+                &working_vector,
+                reference,
+            ) {
+                (working_vector, linked_group) = nudge_one_step(
+                    &linked_group,
+                    &current_group_index,
+                    &working_vector,
+                    reference,
+                );
                 // Update active group data.
                 active_group = linked_group[current_group_index].clone();
                 //println!("Nudge check:         true");
             } else {
-                if nudge_check(&linked_group, &(&reachback - 1), &working_vector, reference) == false {
+                if nudge_check(&linked_group, &(&reachback - 1), &working_vector, reference)
+                    == false
+                {
                     println!("breaks here?");
                     break 'outer;
                 }
                 //println!("Nudge check:         false");
-                
             }
             // next group follows.
-            if nudge_check(&linked_group, &(current_group_index - 1), &working_vector, reference){
-                (working_vector, linked_group) = nudge_one_step(&linked_group, &(current_group_index - 1), &working_vector, reference);
-                if cached_flag == false{
+            if nudge_check(
+                &linked_group,
+                &(current_group_index - 1),
+                &working_vector,
+                reference,
+            ) {
+                (working_vector, linked_group) = nudge_one_step(
+                    &linked_group,
+                    &(current_group_index - 1),
+                    &working_vector,
+                    reference,
+                );
+                if cached_flag == false {
                     cached_flag = true;
                     vector_cache = working_vector.clone();
                     linked_cache = linked_group.clone();
@@ -184,12 +205,17 @@ fn linked_group_counter(
             } else {
                 println!("Does it ever get here?");
                 // check if active vector can move more, if it can, move continue loop
-                if nudge_check(&linked_group, &current_group_index, &working_vector, reference){
+                if nudge_check(
+                    &linked_group,
+                    &current_group_index,
+                    &working_vector,
+                    reference,
+                ) {
                     continue;
                 }
                 // if more motion is impossible, we move over to the next phase.
                 // check the reachback counter, if that is more than zero:
-                // retrieve cached arrangement 
+                // retrieve cached arrangement
                 // attempt to nudge group beyond reachback, nudge if possible.
                 // if not possible, check if beyond reachback has any freedoms left
                 // after new working vector is retrieved, try to nudge beyond reachback again.
@@ -199,49 +225,61 @@ fn linked_group_counter(
                     println!("here?");
                     working_vector = vector_cache.clone();
                     linked_group = linked_cache.clone();
-                    if reachback_cached_flag == false{
+                    if reachback_cached_flag == false {
                         reachback_cached_flag == true;
                         reachback_cache = working_vector.clone();
                     }
-                    if nudge_check(&linked_group, &(&reachback - 1), &working_vector, reference){
-                        (working_vector, linked_group) = nudge_one_step(&linked_group, &(&reachback - 1), &working_vector, reference);
+                    if nudge_check(&linked_group, &(&reachback - 1), &working_vector, reference) {
+                        (working_vector, linked_group) = nudge_one_step(
+                            &linked_group,
+                            &(&reachback - 1),
+                            &working_vector,
+                            reference,
+                        );
                     } else {
                         // check if any more freedoms, use is locked if locked, we are done, I think.
-                        if is_locked(&(reachback - 1), &linked_group, &working_vector, reference){
-                            if reachback - 1 == 0{
+                        if is_locked(&(reachback - 1), &linked_group, &working_vector, reference) {
+                            if reachback - 1 == 0 {
                                 break 'outer;
                             } else {
                                 reachback -= 1;
                                 working_vector = reachback_cache.clone();
-                                if nudge_check(&linked_group, &(&reachback - 1), &working_vector, reference){
-                                    (working_vector, linked_group) = nudge_one_step(&linked_group, &(&reachback - 1), &working_vector, reference);
+                                if nudge_check(
+                                    &linked_group,
+                                    &(&reachback - 1),
+                                    &working_vector,
+                                    reference,
+                                ) {
+                                    (working_vector, linked_group) = nudge_one_step(
+                                        &linked_group,
+                                        &(&reachback - 1),
+                                        &working_vector,
+                                        reference,
+                                    );
                                 }
                             }
-                        } 
+                        }
                     }
-                    if nudge_check(&linked_group, &(&reachback - 1), &working_vector, reference){
+                    if nudge_check(&linked_group, &(&reachback - 1), &working_vector, reference) {
                         cached_flag = true;
-                       vector_cache = working_vector.clone();
-                       linked_cache = linked_cache.clone();
+                        vector_cache = working_vector.clone();
+                        linked_cache = linked_cache.clone();
                     } else {
                         cached_flag = false;
                     }
                 }
             }
-
-
         }
-
     }
 
     arrangement_counter
 }
 fn nudge_one_step(
-    linked_group: &Vec<SpringGroup>, 
-    current_group_index: &usize, 
-    working_vector: &Vec<char>, 
-    reference: &Vec<char>
-)-> (Vec<char>, Vec<SpringGroup>){
+    linked_group: &Vec<SpringGroup>,
+    current_group_index: &usize,
+    working_vector: &Vec<char>,
+    reference: &Vec<char>,
+) -> (Vec<char>, Vec<SpringGroup>) {
     // moves active group one step to the right, returns both edited
     // working vector and edited SpringGroup
     let mut working_vector = working_vector.clone();
@@ -259,7 +297,7 @@ fn nudge_one_step(
 
     (working_vector, linked_group)
 }
-fn place_group(active_group: &SpringGroup, working_vector: &Vec<char>) ->Vec<char> {
+fn place_group(active_group: &SpringGroup, working_vector: &Vec<char>) -> Vec<char> {
     let mut working_vector = working_vector.clone();
     let mut window = active_group.start_index;
     let leading_edge = window + active_group.size - 1;
@@ -270,7 +308,11 @@ fn place_group(active_group: &SpringGroup, working_vector: &Vec<char>) ->Vec<cha
 
     working_vector
 }
-fn lift_group(active_group: &SpringGroup, working_vector: &Vec<char>, reference: &Vec<char>) ->Vec<char> {
+fn lift_group(
+    active_group: &SpringGroup,
+    working_vector: &Vec<char>,
+    reference: &Vec<char>,
+) -> Vec<char> {
     let mut working_vector = working_vector.clone();
     let mut window = active_group.start_index;
     let leading_edge = window + active_group.size - 1;
@@ -280,7 +322,7 @@ fn lift_group(active_group: &SpringGroup, working_vector: &Vec<char>, reference:
     }
     working_vector
 }
-fn find_next(active_group: &SpringGroup, reference: &Vec<char>)-> usize{
+fn find_next(active_group: &SpringGroup, reference: &Vec<char>) -> usize {
     // returns new start index for active group
     let index = active_group.start_index;
     let size = active_group.size;
@@ -289,12 +331,12 @@ fn find_next(active_group: &SpringGroup, reference: &Vec<char>)-> usize{
     let valid = '?';
     let start = window;
     let mut end = window;
-    loop{
+    loop {
         let mut valid_flag = true;
         leading_edge += 1;
         window = leading_edge - (size - 1);
         let mut count = window;
-        
+
         while count <= leading_edge {
             if reference[count] != valid {
                 valid_flag = false;
@@ -304,21 +346,21 @@ fn find_next(active_group: &SpringGroup, reference: &Vec<char>)-> usize{
         if valid_flag == true {
             end = window;
             break;
-        }   
+        }
     }
     let offset = end - start;
     offset
 }
 fn nudge_check(
-    linked_group: &Vec<SpringGroup>, 
-    current_group_index: &usize, 
-    working_vector: &Vec<char>, 
-    reference: &Vec<char>)
-     -> bool {
+    linked_group: &Vec<SpringGroup>,
+    current_group_index: &usize,
+    working_vector: &Vec<char>,
+    reference: &Vec<char>,
+) -> bool {
     // checks if current group has freedom to move
     let active_group = linked_group[*current_group_index].clone();
     if freedom_counter(&active_group, working_vector, reference).0 > 1 {
-        return true
+        return true;
     }
     false
 }
@@ -515,8 +557,8 @@ fn freedom_counter(
 ) -> (usize, usize) {
     // println!("freedom counter started");
     // counts freedoms of a group by moving group step by step over
-    // working vector until it encounters another group or the edge of working 
-    // vectornow also counts the amount of steps a group has to take to get to 
+    // working vector until it encounters another group or the edge of working
+    // vectornow also counts the amount of steps a group has to take to get to
     // its end position, to fix a bug in the shake_right/freedom_counter complex.
     // Defining stuff for semantic clarity
     let index = active_group.start_index;
@@ -530,7 +572,7 @@ fn freedom_counter(
     // this is the counter that tracks the freedoms
     let mut freedoms: usize = 1;
     // This is next one a patch to fix a bug.
-    // to get the correct offset for shake_right, i need to count the 
+    // to get the correct offset for shake_right, i need to count the
     // amount of true steps a group takes through the spring map, I do
     // this by capturing the index of the first and last position, and
     // using the difference as the offset
@@ -553,7 +595,7 @@ fn freedom_counter(
         if reference[index] == '#' {
             break;
         }
-        
+
         // check if all values in window are valid
         while count <= leading_edge {
             if reference[count] != valid {

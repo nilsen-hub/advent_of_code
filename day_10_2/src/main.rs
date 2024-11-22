@@ -67,7 +67,10 @@ fn main() {
     let parsed = parse(full_data);
     let solution = step_recorder(&parsed);
     let enclosed = count_enclosed(&parsed, &solution.1);
-    println!("There are {} tiles of land enclosed in the pipeline", enclosed);
+    println!(
+        "There are {} tiles of land enclosed in the pipeline",
+        enclosed
+    );
     println!("program runtime: {}", now.elapsed().as_micros());
     //load parsed data into step_counter()
     //get amount of steps to complete circuit, divide by 2 and output
@@ -109,9 +112,9 @@ fn ray_caster(index: usize, vector: &Vec<char>) -> bool {
     let mut beam: Vec<char> = Vec::with_capacity(256);
 
     // remove all '-' and '.' from vector, we only want boundrys
-    for el in data{
+    for el in data {
         match el {
-            '.'|'-' => continue,
+            '.' | '-' => continue,
             _ => proto_beam.push(*el),
         }
     }
@@ -119,8 +122,8 @@ fn ray_caster(index: usize, vector: &Vec<char>) -> bool {
     // if F is followed by J or L is followed by 7, remove the former
     // this must be done because these two combinations of pipes models
     // a single boundry, but reads as two boundrys if counted without sanitation
-    for (index, el) in proto_beam.iter().enumerate(){
-        match el{
+    for (index, el) in proto_beam.iter().enumerate() {
+        match el {
             'F' if proto_beam[index + 1] == 'J' => continue,
             'L' if proto_beam[index + 1] == '7' => continue,
             _ => beam.push(*el),
@@ -129,7 +132,7 @@ fn ray_caster(index: usize, vector: &Vec<char>) -> bool {
 
     // if length of cleaned vector = 0 or % 2 = 0 return false
     // else return true
-    if beam.len() == 0 || beam.len() % 2 == 0{
+    if beam.len() == 0 || beam.len() % 2 == 0 {
         return false;
     }
     true
