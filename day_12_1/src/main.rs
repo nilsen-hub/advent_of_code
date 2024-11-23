@@ -454,7 +454,6 @@ fn linked_group_detective(
     // println!("linked_group_detective exited, returning vector len: {}", output_vector.len());
     output_vector
 }
-
 fn is_single(
     index: &usize,
     active_group: &SpringGroup,
