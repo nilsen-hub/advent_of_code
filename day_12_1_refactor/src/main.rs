@@ -46,18 +46,21 @@ struct ConditionMap {
 impl ConditionMap{
     fn build_base_arr(&self) -> Vec<char>{
         let mut output = self.maps.springs.clone();
-        for (index, group) in self.spring_groups.iter().enumerate().clone(){
+        for (index, _group) in self.spring_groups.iter().enumerate().clone(){
             output = self.place_group(&index, &output);
         }
     
         output
     }
-    fn place_group(&self, group: &usize) -> Vec<char> {
-        let group = *group;
-        let mut output = self.maps.springs.clone();
-        let mut start = self.spring_groups[group].start_index;
-        let id = self.spring_groups[group].id;
-        let size = self.spring_groups[group].size;
+    fn possibility_printer(&self){
+        // First separate out needed variables from self
+        
+    }
+    fn place_group(&self, group_index: &usize, map: &Vec<char>) -> Vec<char> {
+        let mut output = map.clone();
+        let mut start = self.spring_groups[*group_index].start_index;
+        let id = self.spring_groups[*group_index].id;
+        let size = self.spring_groups[*group_index].size;
         let leading_edge = start + size - 1;
         while start <= leading_edge {
             output[start] = char::from_digit(id.clone() as u32, 10).unwrap();
@@ -66,12 +69,27 @@ impl ConditionMap{
     
         output
     }
+    fn lift_group(&self, group_index: &usize, map: &Vec<char>,) -> Vec<char> {
+        let reference = self.maps.springs.clone();
+        let mut output = map.clone();
+        let mut start = self.spring_groups[*group_index].start_index;
+        let size = self.spring_groups[*group_index].size;
+        let leading_edge = start + size - 1;
+        while start <= leading_edge {
+            output[start] = reference[start];
+            start += 1;
+        }
+        output
+    }
+    fn permutator(map:ConditionMap){
+
+    }
 
 }
 
 fn main() {
     let now = Instant::now();
-    let path = "./data/day12T";
+    let path = "./data/day12TT";
     let full_data = get_list_from_file(path);
     for line in full_data{
         starttup(line);
