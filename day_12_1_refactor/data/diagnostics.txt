@@ -1,0 +1,996 @@
+???.### 1,1,3 = 1
+.??..??...?##. 1,1,3 = 4
+?#?#?#?#?#?#?#? 1,3,1,6 = 1
+????.#...#... 4,1,1 = 1
+????.######..#####. 1,6,5 = 4
+?###???????? 3,2,1 = 10
+
+
+??.??????.?#????? 1,4 = 16
+0?.??????.1111???
+?0.??????.1111???
+??.0?????.1111???
+??.?0????.1111???
+??.??0???.1111???
+??.???0??.1111???
+??.????0?.1111???
+??.?????0.1111???
+0?.??????.?1111??
+?0.??????.?1111??
+??.0?????.?1111??
+??.?0????.?1111??
+??.??0???.?1111??
+??.???0??.?1111??
+??.????0?.?1111??
+??.?????0.?1111??
+
+2024.11.12
+non linked groups are simply multiplied
+if "1" had 3 degrees of freedom instead of two, it would be one more round through them all
+if my reasoning is correct, a third independent group would simply add another multiplier
+
+linked groups are a bit tougher, lets take this simple example.
+group one is locked, so not a part of consideration (minimum case is all groups are locked = 1 arranngement)
+
+case:
+?###???????? 3,2,1 = 10
+left leaning optimized case:
+1 and 2 is locked 3 has four degrees
+lets try to add that to our position sum:
+positions = 4
+.111.22.3...
+lets start by moving the outer value on over:
+.111.22..3..
+this opens up one degree for 2 lets add that one....
+
+I might have had a wee breakthrough here
+hypothesis: a linked group of two
+can be described by a triangular number with a base equal to the largest degree of freedom
+
+
+?###???????? 3,2,1 = 10
+.111.22.3....
+.111..22.3...
+.111...22.3..
+.111....22.3.
+.111...22..3.
+.111..22...3.
+.111.22....3.
+.111.22...3..
+.111..22..3..
+.111.22..3...
+.
+5+4+3+2+1 = 
+
+lets make a different case.. first remove one degree from the above example. That would give a base of three
+the triangular number of a base of three is 6.
+
+I started working it out, but you can clearly see that by removing the last column above, you destroy 4 possibilities
+thus resulting in 10 - 4 is 6
+
+By this I consider my hypothesis to be correct and true for a linked pair of groups.
+It would be cool to find a way to generalize over this, but lets not get ahead of ourselves
+once you have the base of the triangle, the code is: (check line 243 for even sexier code)
+
+fn triangle(base: int) -> int
+triangle = base
+loop
+    base -= 1
+    if base == 0 break
+    triangle += base
+
+
+Which brings us to this guy on line 89, 4 linked pairs. Maybe theres some way to extend the
+idea of drawing a conclusion based on the shared degrees of freedom.
+
+On the surface this looks like a simple multiplication.
+Theres three degrees of freedom shared among four groups.
+3 * 4 = 12
+but I'm suddenly not so sure this is a complete truth-table, im gonna make a new one on line 103
+
+???????????????????? 1,5,6,3 = 12
+1.22222.333333.444..
+1.22222.333333..444.
+1.22222.333333...444
+1.22222..333333..444
+1.22222...333333.444
+1..22222..333333.444
+1...22222.333333.444
+.1..22222.333333.444
+.1.22222.333333.444.
+.1.22222.333333..444
+.1.22222..333333.444
+..1.22222.333333.444
+
+???????????????????? 1,5,6,3 = 12
+1.22222.333333.444..
+1.22222.333333..444.
+1.22222.333333...444
+1.22222..333333.444. HAH! I WAS RIGHT! THIS ONE IS NEW
+1.22222..333333..444
+1..22222.333333.444.
+1..22222.333333..444
+.1.22222.333333.444.
+.1.22222.333333..444
+1.22222...333333.444
+1..22222..333333.444
+1...22222.333333.444
+1...22222.333333.444
+
+I already messed up, but we learned something
+What we now know as general truths:
+Simple multiplication will not work, the answer to ???????????????????? 1,5,6,3 is more than twelve.
+We know that a linked pair generates the triangle of the degree of freedom shared between the pairs
+...
+So if we break down the above.
+Lets first consider the case where 1 and 2 are locked.
+That makes 3 and 4 a linked pair with a shared three degrees of freedom
+We know this gives us 6 unique arrangements
+and all those arrangements are a part of our final answer.
+
+Now, lets consider this arrangement:
+1.22222...333333.444
+Lets imagine that this time its 3 and 4 who are locked
+That makes 1 and 2 into a linked group, with just as many degrees of freedom.
+So we get 6 more arrangements
+Lets start summing
+
+4 and 3 = 6
+1 and 2 = 6 (but, dont forget to account for the one shared arrangement!)
+
+4 and 3 = 6
+1 and 2 = 6 - 1
+
+That makes 11 unique arrangements
+My hunch is telling me that we have just started another triangular number with a base of 6
+which would give us 6+5+4+3+2+1 = 21 unique arrangements 
+But lets not go crazy just yet, thats merely a hunch
+
+So 1 and 2 finished their dance, and ended up here:
+1...22222.333333.444
+..
+Im gonna have to write this out...
+First 3 and 4
+1.22222.333333.444..
+1.22222.333333..444.
+1.22222.333333...444
+1.22222..333333.444.
+1.22222..333333..444
+1.22222...333333.444
+thats the first 6 ones
+
+then 1 and 2, remember the last arrangement above is shared
+1..22222..333333.444 
+.1.22222..333333.444
+.1..22222.333333.444
+..1.22222.333333.444 
+1...22222.333333.444
+
+I had to make it a bit ugly to land at that arrangement on line 165
+Now we have two more linked groups with on group with 1 alone and 2,3,4 in a group
+
+and again recall that the final line above is shared
+To lessen cognitive load, lets compress them to the left again, but now we have to be mindful
+Because full compression is already recorded in line 151
+
+1..22222.333333.444. <- so this is the most compressed they can be
+.1..22222.333333.444 
+.1.22222.333333.444.
+..1.22222.333333.444
+
+and we have four unique arrangements, and the triangle continues.
+That means I'm convinced, we are dealing with a problem centered on
+triangular numbers. At least thats my hypothesis at the moment...
+
+lets just write it out, so that we can be certain.
+
+1.22222.333333.444..
+1.22222.333333..444.
+1.22222.333333...444
+1.22222..333333.444.
+1.22222..333333..444
+1.22222...333333.444
+
+1..22222..333333.444 
+.1.22222..333333.444
+.1..22222.333333.444
+..1.22222.333333.444 
+1...22222.333333.444
+
+1..22222.333333.444. 
+////////////////////.1..22222.333333.444 Ok, again I'm thwarted by reality, this is on 194, so theres only 3 possible arrangements
+.1.22222.333333.444. at this level
+..1.22222.333333.444 next is 1,2,3 and 4
+
+.1.22222.333333..444 which I can say, right off the bat, has 4 covered arrangements all ready FUCK
+                     and maybe more? line 185, 186 and 187 grabs three straight away
+                     line 200 and 201 takes two more which makes 5, lets see if we can spot the missing one
+                     and there it is! Good news is that what I wrote below actually makes some sense now.
+
+I continue at line 225, between here and there is some reasoning on a false assumption.
+
+So the problem now, is how do I determine the base of the triangle
+4 linked groups sharing 3 degrees of freedom made a base of 6
+
+how is 6 connected to 4 and 3?
+(4*3) / 2 makes six, but that feels somewhat arbitrary
+4+3 - 1 also makes six.
+
+lets say there were 5 groups, would that add 7 arrangements?
+lets see if theres some common ground between the 2 group case and 4 group case.
+
+To make it simpler, lets have 2 with 3 shared freedoms. By now it should be clear that this makes the base 3.
+It might just be a linear function through it all.
+3 and 3 makes 4 (going off of the multiplication above, that would make 4,5, which makes no sense)
+4 and 3 makes 5, but thats not true.
+
+Its not all shit though!
+We have learned even more!
+
+???????????????????? 1,5,6,3 = 15 
+
+This is neat, it flips the bit on line 223
+15 is also a triangular number, only with a base of 5.
+
+4 groups sharing 3 degrees makes a base of 5.
+
+Which we can generalize, and thats kinda cool.
+
+1 group sharing 5 freedoms gives a plain number, in this case 5
+2 groups sharing 5 freedoms gives a triangular number with a base of 5 (sums to 15)
+
+0.1....
+0..1...
+0...1..
+0....1.
+0.....1
+.0..1..
+.0...1.
+.0....1
+So any n number of groups larger than 1, sharing x amount of freedoms will 
+give a triangle with a base of n - 2 + x
+
+New, sexier way to calculate triangular numbers from a given base size:
+fn triangulate(base:int) -> int
+    if base % 2 == 0
+       let triangle = (base + 1) * (base / 2)
+    else
+       let triangle = base * ((base / 2) + 1)
+
+2024.11.18
+Here we try something new, I have buildt a synthetic case based off of this input:
+
+?###???????? 3,2,1
+000.22.1....
+.000.22.1...
+I have made a case from this, where the third group is both single and linked.
+This is an important case to understand, and perhaps its important to understand 
+more variations of the case. But for now, lets look at: 
+
+? # # # ? ? ? # ? ? ? ? ? ? ?  3,3,1
+? 0 0 0 ? 1 1 1 ? 2 ? ? ? ? ?  left leaning optimized valid base case.
+                               group 0 is locked, so will be filtered early
+                               group 1 has freedoms in the deeper freedom check
+                               group 2 has obvious freedoms. Lets write this out
+? 0 0 0 ? 1 1 1 ? 2 ? ? ? ? ?  first the shared ones and then the individual ones
+? 0 0 0 ? 1 1 1 ? ? 2 ? ? ? ? 
+? 0 0 0 ? 1 1 1 ? ? ? 2 ? ? ? 
+? 0 0 0 ? ? 1 1 1 ? 2 ? ? ? ? 
+? 0 0 0 ? ? ? 1 1 1 ? 2 ? ? ?  so here we know that this dance gives a triangular number 
+? 0 0 0 ? ? 1 1 1 ? ? 2 ? ? ?  with base 3, because theres 3 shared freedoms. 
+
+Now, when group 2 goes out of range
+of group 1, they both turn into singles
+both with their own multiplier.. However, this multiplier
+is still part of the 1-2 linked group, and needs to
+be counted as such when the groups are summed up.
+The procedure should be something like:
+(single freedoms group 1 * single freedoms group 2) + triangle of shared freedoms.
+I think we can go even further, once 2 goes out of range of 1, we have captured
+both the shared base and the individual freedoms of group 1. So the simpler case
+is:
+(single freedoms group 2 * shared freedoms) + triangle of shared freedoms
+in this synthetic case this boils down to:
+(3*3) + 6 = 15
+
+This looks like it can get even messier, consider the below synthetic map
+
+? ? ? # ? ? ? ? ? ? # ? ? ? ? ? ? ? ?  3,5,1
+? 0 0 0 ? ? 1 1 1 1 1 ? 2 ? ? ? ? ? ?  <- base placement
+
+Lets do some observations:
+
+- group 0 has two independent freedoms in the base case, this arrangement
+  would cause my current strategy to fail. As i currently consider any group
+  with freedoms in the base case to be pure single. This is obviously not true, 
+  so needs correcting* IS CORRECTED
+- group 1 has no freedoms in the base case
+- group 2 has 7 freedoms in the base case
+
+I'm flying blind, for now, but lets pretend [0] is a free single, and keep the 2 freedoms
+in this neat little box:
+{2}
+
+If we then pretend [0] is locked there, and calculate for [1,2] using what we figured
+out from line 277: (single freedoms group 2 * shared freedoms) + triangle of shared freedoms
+we get 
+(2*5) + 15 = 25 
+Which seem like a lot, but makes sense when i visualize it
+then we multiply that answer with the 2 we already have from the freedoms of [0]. 
+That gives 50 which still seem like a lot, but is the logical conclusion from accepting the 25.
+
+lets keep these in view:
+? ? ? # ? ? ? ? ? ? # ? ? ? ? ? ? ? ?
+? 0 0 0 ? ? 1 1 1 1 1 ? 2 ? ? ? ? ? ?
+
+Dammit, this is getting really messy. There has to be an elegant way of generalizing this.
+A way to unify this case with the previous (and maybe even further)..
+
+Lets try to identify group movement first.
+
+1 - check if [2,1] is shared
+    1.1 - count freedoms in [1]
+    1.2 - move [2] once to the right
+    1.3 - count freedoms in [1]
+    1.4 - if [1] has gained freedom, [2,1] is shared
+
+Yes they are shared.
+
+2 - check if [1,0] is shared
+    2.1 - count freedoms in [0]
+    2.2 - move [1] once to the right
+    2.3 - count freedoms in [0]
+    2.4 - if [0] has gained freedom, [1,0] is shared
+
+Ok, I need to do some code now before my head explodes.. Knowing full well I don't fully understand
+
+2024.11.20
+Finally got the test set approved, and as I suspected, the case of uncertain partners comes up.
+It actually comes up quite a bit. Good news is, that a unified solution to this problem will
+make everything work out well.
+
+Bad news is I'm tired..
+Well, this is from line 144 of the data set provided, and it pretty much is a "worst case".
+Lets get to it then..
+
+?????????#??.??????. 1,6,1,1,1,1
+
+my output claims an outrageous amount of freedoms: [2,2,3,3,4,4]
+
+?????????#??.??????. 1,6,1,1,1,1
+                     2,2,3,3,4,4 thats nicer.. lets get the LLOC down
+0.111111.1.1.1.1....
+
+Theres a bug here somewhere...
+
+2024.11.20
+
+OK, found the bug. Still a bunch of slutty cases (yes, I have named the types, single, married, slutty).
+Good news is we know how to tell them apart, and, for now thats about it.
+Heres a slutty one from line 987 in the data set.
+
+????.??????? 2,1,2
+
+First we 'build' LLOC, of course.
+
+????.??????? 2,1,2
+00.1.22.....
+
+The freedom map looks like this: (according to my program, trust but verify, right..)
+
+????.??????? 2,1,2
+             3,5,6
+
+00.1.22..... LLOC
+.....00.1.22 RLOC
+00.1......22 freedoms 2: 6
+00......1.22 freedoms 1: 5
+.....00.1.22 freedoms 0: 4
+
+A closer inspection reveals another bug in my code, by now I'm not surprised.
+This day is a russian doll of edge cases, a cascade of descendingly minute
+differences that need consideration. Its probably freedom_counter, possibly
+shake_right again, those twoare a a shitty mess of shit which I cant wait 
+to properly refactor. 
+
+It was the freedom counter at fault, again. I've made the wrong assumption 
+that step = freedom. This is what happens when you work more than your head
+can keep up with. This bug is kinda a subtle one..
+
+Theres two functions: shake_right and freedom_counter.
+Freedom counter does what it says on the tin, counts how many freedoms
+a group has in any given arranagement. It will not optimize the arrangement.
+If the given arrangement is unoptimized, the count will be wrong.
+With this arrangement:
+00??.??1??22
+The freedom_counter will count 3 possible positions for [0], which is correct
+for the arrangement, but since [1] is wrongly placed, it is the wrong number 
+of max freedoms.
+There has to be some neat way to encode the exact amount of steps needed to move
+[group] from point A to point B...
+Use the index, of course.. calculate offset by index. Looks good at the moment
+the logic is getting fairly dense and hard to follow, however, we are so close!
+
+Back to our previously scheduled programme:
+The slutty ones on line 987.
+
+????.??????? 2,1,2
+             4,5,6
+
+00.1.22..... LLOC
+.....00.1.22 RLOC
+00.1......22 freedoms 2: 6
+00......1.22 freedoms 1: 5
+.....00.1.22 freedoms 0: 4
+
+They all share 4 freedoms that gives:
+3-2+4 = 5 base for the full group so 15
+
+now [0] has no freedoms left.
+[1] has 1 freedom left
+[2] has 2 freedoms left
+
+then we work out the shared freedoms between [1] and [2]
+2-2+1 = 1
+
+adding that to the previous 15 gives 16
+and then [2] is left with one single freedom.
+Making the dangerous assumption that my reasoning at about line 276 is correct
+** (single freedoms [2] * shared freedoms) + triangle of shared freedoms 
+is the answer.
+
+Question is, is it the min or max of shared freedoms? Can it be both?
+
+I sense some manual outworking coming, I'll try with both it looks like this
+( ( 1 * 5 ) + 1 ) + ( 1 * 4 ) + 15 ) = 6 + 19 = 25
+Now to control my assumptions.
+
+????.??????? 2,1,2
+00.1.22.....
+00.1..22....
+00.1...22...
+00.1....22..
+00.1.....22.
+00.1......22
+00...1.22...
+00...1..22.. 
+00...1...22. 
+00...1....22 
+00....1.22.. 
+00....1..22. 
+00....1...22
+00.....1.22.
+00.....1..22
+00......1.22
+.00..1.22... 
+.00..1..22..
+.00..1...22.
+.00..1....22
+.00...1.22..
+.00...1..22.
+.00...1...22
+.00....1.22.
+.00....1..22
+.00.....1.22
+..00.1.22... 
+..00.1..22..
+..00.1...22.
+..00.1....22
+..00..1.22..
+..00..1..22.
+..00..1...22
+..00...1.22.
+..00...1..22
+..00....1.22
+.....00.1.22
+
+My assumption was, not very surprising, way off, theres 37 arrangements in this badboy.
+How do we get to 37 from what we have?
+
+????.??????? 2,1,2
+             4,5,6
+
+lets pretend they all share 6 freedoms.
+3-2+6 = 7 = 28. Thats still not enough.
+AHA! This is the worst case I made a synthetic for up above.
+
+Lets engage in some quiet contemplation on the above manual writeout.
+
+from line 443 to line 444, [0] becomes a triple single and [1,2] becomes a linked pair with
+4 shared freedoms.
+
+which gives 3 * 10 = 30
+           [0] [1,2 triangle of 4]
+
+adding the six freedoms of [2] on top of that, and the final one gives 37 obviously
+but how to properly encode this?
+
+I think i'm going to implement a very naive solution. And get back to this at a later stage.
+I'm still quite sure theres a dignified way to do this, but I just want to get done.
+
+Naive solution was horrible, so, I'm back to here.
+
+????.??????? 2,1,2
+             4,5,6
+
+So we need to figure out, for each group, how many freedoms are shared.
+Lets go back to way before and look at this:
+
+???????????????????? 1,5,6,3
+0.11111.222222.333..
+0.11111.222222..333.
+0.11111.222222...333
+0.11111..222222.333.
+0.11111..222222..333
+0.11111...222222.333
+0..11111.222222.333.
+0..11111.222222..333
+0..11111..222222.333
+0...11111.222222.333
+.0.11111.222222.333.
+.0.11111.222222..333               
+.0.11111..222222.333
+.0..11111.222222.333
+..0.11111.222222.333
+
+??????????????????????????  1,5,6,3,4 (pred, 28)(incomplete??.. yes)
+0.11111.222222.333.4444...
+0.11111.222222.333..4444..
+0.11111.222222.333...4444.
+0.11111.222222.333....4444
+0.11111.222222..333.4444..
+0.11111.222222..333..4444.
+0.11111.222222..333...4444
+0.11111.222222...333.4444.
+0.11111.222222...333..4444
+0.11111.222222....333.4444
+0.11111..222222.333.4444..
+0.11111..222222.333..4444.
+0.11111..222222.333...4444
+0.11111..222222..333.4444.
+0.11111..222222..333..4444
+0.11111..222222...333.4444
+0.11111...222222.333.4444.
+0.11111...222222.333..4444
+0.11111...222222..333.4444
+0.11111....222222.333.4444
+0..11111.222222.333.4444..
+0..11111.222222.333..4444.
+0..11111.222222.333...4444
+0..11111.222222..333.4444.
+0..11111.222222..333..4444
+0..11111.222222...333.4444
+0..11111..222222.333.4444.
+0..11111..222222.333..4444
+0..11111..222222..333.4444
+0..11111...222222.333.4444
+0...11111.222222.333.4444.
+0...11111.222222.333..4444
+0...11111.222222..333.4444
+0...11111..222222.333.4444
+0....11111.222222.333.4444
+.0.11111.222222.333.4444..
+.0.11111.222222.333..4444.
+.0.11111.222222.333...4444
+.0.11111.222222..333.4444.
+.0.11111.222222..333..4444
+.0.11111.222222...333.4444
+.0.11111..222222.333.4444.
+.0.11111..222222.333..4444
+.0.11111..222222..333.4444
+.0.11111...222222.333.4444
+.0..11111.222222.333.4444.
+.0..11111.222222.333..4444
+.0..11111.222222..333.4444
+.0..11111..222222.333.4444
+.0...11111.222222.333.4444
+..0.11111.222222.333.4444.
+..0.11111.222222.333..4444
+..0.11111.222222..333.4444
+..0.11111..222222.333.4444
+..0..11111.222222.333.4444
+...0.11111.222222.333.4444
+
+
+Thats annoying, and refreshing. I decided to put my line 250 assertion to the test.
+Of course it falls completely apart. Let me restate that sentence here:
+
+"So any n number of groups larger than 1, sharing x amount of freedoms will 
+give a triangle with a base of n - 2 + x"
+
+There seems to an exponential growth of possibilites with every added group, which
+really should not come as a surprise. It think we can learn something by breaking
+this further down.
+
+5 groups sharing 4 freedoms give 50 permutations. How on earth to be move from 
+one to the other?
+
+One possible way could be to take the triangular number of the shared freedoms, in
+this case 10, and multiply by the amount of groups.
+
+Apllying that logic to our old friend here:
+???????????????????? 1,5,6,3 
+0.11111.222222.333..
+
+4 groups all sharing 3 freedoms, triangle of 3 is 6, 6*4 is 24
+so nowhere close to true.
+
+Restating some basic facts:
+Single groups are multiplied
+Married groups of two have freedoms equal to the triangle of a base the size
+of their shared freedoms.
+
+Aside from that, I have no clue at the moment. And it really bugs me..
+From now I will number my cases using {}
+Looking at this again:
+
+case:{1.1}
+???????????????????? 1,5,6,3
+lets count the different possible groupings
+0,1,2,3
+[2,3]
+[1,2]
+[0,1]
+[0,1,2]
+[1,2,3]
+
+i think that is all..
+
+lets do the same with this synthetic one:
+case:{1.2}
+??????????????????????????  1,5,6,3,4
+0,1,2,3,4
+[3,4]
+[2,3]
+[1,2]
+[0,1]
+[4,3,2]
+[3,2,1]
+[2,1,0]
+[4,3,2,1]
+[3,2,1,0]
+
+in {1.1} theres five subgroups (triangle of three minus one)
+in {1.2} theres nine subgroups (triangle of four minus one)
+
+in {1.1} the answer is amount of subgroups multiplied by shared freedoms
+    5 subgroups * 3 shared freedoms = 15
+
+{1.2} does not solve the same way. All numbers are married, and share four freedoms
+    9 subgroups * 4 shared freedoms = 36
+
+I'm going to try to shorten {1.2} to three shared freedoms, and see what that does
+
+case:{1.3}
+?????????????????????????  1,5,6,3,4
+0.11111.222222.333.4444..
+0.11111.222222.333..4444.
+0.11111.222222.333...4444
+0.11111.222222..333.4444.
+0.11111.222222..333..4444
+0.11111.222222...333.4444
+0.11111..222222.333.4444.
+0.11111..222222.333..4444
+0.11111..222222..333.4444
+0.11111...222222.333.4444
+0..11111.222222.333.4444.
+0..11111.222222.333..4444
+0..11111.222222..333.4444
+0..11111..222222.333.4444
+0...11111.222222.333.4444
+.0.11111.222222.333.4444.
+.0.11111.222222.333..4444
+.0.11111.222222..333.4444
+.0.11111..222222.333.4444
+.0..11111.222222.333.4444
+..0.11111.222222.333.4444
+
+{1.3} gives 21 possibilites, a dramatic decrease from the 50 given by four freedoms. However, it is a triangular
+      number, the triangle of 6. Which also happens to follow the n-2+x formula. That makes me think the formula is 
+      missing a term. Lets check one with 7 groups sharing 3 freedoms
+
+case {1.4}
+
+??????????????? 1,1,1,1,1,1,1 (predicted outcome: 36)
+0.1.2.3.4.5.6..
+0.1.2.3.4.5..6.
+0.1.2.3.4.5...6
+0.1.2.3.4..5.6.
+0.1.2.3.4..5..6
+0.1.2.3.4...5.6
+0.1.2.3..4.5.6.
+0.1.2.3..4.5..6
+0.1.2.3..4..5.6
+0.1.2.3...4.5.6
+0.1.2..3.4.5.6.
+0.1.2..3.4.5..6
+0.1.2..3.4..5.6
+0.1.2..3..4.5.6
+0.1.2...3.4.5.6
+0.1..2.3.4.5.6.
+0.1..2.3.4.5..6
+0.1..2.3.4..5.6
+0.1..2.3..4.5.6
+0.1..2..3.4.5.6
+0.1...2.3.4.5.6
+0..1.2.3.4.5.6.
+0..1.2.3.4.5..6
+0..1.2.3.4..5.6
+0..1.2.3..4.5.6
+0..1.2..3.4.5.6
+0..1..2.3.4.5.6
+0...1.2.3.4.5.6
+.0.1.2.3.4.5.6.
+.0.1.2.3.4.5..6
+.0.1.2.3.4..5.6
+.0.1.2.3..4.5.6
+.0.1.2..3.4.5.6
+.0.1..2.3.4.5.6
+.0..1.2.3.4.5.6
+..0.1.2.3.4.5.6
+
+{1.4} as prediced, n-2+x holds true for n amount of groups sharing 3 freedoms, is there a way to extend this 
+      formula to cover the case of 4 freedoms? Or any amount 
+
+case {1.5}
+??????????????????????????  1,5,6,3,4
+
+Again looking at this. Theres 5 groups sharing 4 freedoms, from manual counting we know theres 50
+arrangements. 50 isnt a triangle of anything. But I cant shake the feeling that triangles are somehow 
+involved, since the base case of two married groups is a triangle.
+
+5 - 2 + 4 
+lets look at our subgroups again, maybe theres some more to get out of this:
+
+case:{1.1}
+???????????????????? 1,5,6,3
+lets count the different possible groupings
+0,1,2,3
+[2,3]
+[1,2]
+[0,1]
+[0,1,2]
+[1,2,3]
+
+i think that is all..
+
+lets do the same with this synthetic one:
+case:{1.2}
+??????????????????????????  1,5,6,3,4
+0,1,2,3,4
+[3,4]
+[2,3]
+[1,2]
+[0,1]
+[4,3,2]
+[3,2,1]
+[2,1,0]
+[4,3,2,1]
+[3,2,1,0]
+
+in {1.1} theres 5 subgroups all sharing 3 freedoms 5*3 = 15 which is the answer, the triangle of 5 is also 15
+    maybe thats something to consider
+in {1.2} theres 9 subgroups all sharing 4 freedoms 9*4 = 36 which is not the answer, the triangle of 9 is 45
+    the closest triangle to 50... lets check a group of 4 sharing 4 freedoms. If my hunch holds, there will
+    be 19 permutations. that feels like to few. Another hunch tells me 40, but I dont trust it.
+
+case {2.1}
+??????????? 3,4 | 2 groups sharing 4 gives 10 positions (triangle of shared groups)
+333.4444...      4
+333..4444..      4
+333...4444.      4
+333....4444      4
+.333.4444..      3
+.333..4444.      3
+.333...4444      3
+..333.4444.      2
+..333..4444      2
+...333.4444      1
+
+case {2.2}
+??????????????????  6,3,4 | 3 groups sharing 4 gives 20, a doubling, which feels logical
+222222.333.4444... <- repetition of of {2.1}
+222222.333..4444..
+222222.333...4444.
+222222.333....4444
+222222..333.4444..
+222222..333..4444.
+222222..333...4444
+222222...333.4444.
+222222...333..4444
+222222....333.4444 <- ends here
+.222222.333.4444.. 
+.222222.333..4444.
+.222222.333...4444
+.222222..333.4444.
+.222222..333..4444
+.222222...333.4444
+..222222.333.4444.
+..222222.333..4444
+..222222..333.4444
+...222222.333.4444
+
+11111.222222.333.4444... 5,6,3,4 having 4 groups sharing 4, gives 15 new positions 35 in total
+11111.222222.333..4444..
+11111.222222.333...4444.
+11111.222222.333....4444
+11111.222222..333.4444..
+11111.222222..333..4444.
+11111.222222..333...4444
+11111.222222...333.4444.
+11111.222222...333..4444
+11111.222222....333.4444
+11111..222222.333.4444..
+11111..222222.333..4444.
+11111..222222.333...4444
+11111..222222..333.4444.
+11111..222222..333..4444
+11111..222222...333.4444
+11111...222222.333.4444.
+11111...222222.333..4444
+11111...222222..333.4444
+11111....222222.333.4444
+.11111.222222.333.4444..
+.11111.222222.333..4444.
+.11111.222222.333...4444
+.11111.222222..333.4444.
+.11111.222222..333..4444
+.11111.222222...333.4444
+.11111..222222.333.4444.
+.11111..222222.333..4444
+.11111..222222..333.4444
+.11111...222222.333.4444
+..11111.222222.333.4444.
+..11111.222222.333..4444
+..11111.222222..333.4444
+..11111..222222.333.4444
+...11111.222222.333.4444
+
+case {2.3}
+0.11111.222222.333.4444... 1,5,6,3,4 5 groups sharing 4, gives 21 new positions, 56 in total 
+0.11111.222222.333..4444..
+0.11111.222222.333...4444.
+0.11111.222222.333....4444
+0.11111.222222..333.4444..
+0.11111.222222..333..4444.
+0.11111.222222..333...4444
+0.11111.222222...333.4444.
+0.11111.222222...333..4444
+0.11111.222222....333.4444
+0.11111..222222.333.4444..
+0.11111..222222.333..4444.
+0.11111..222222.333...4444
+0.11111..222222..333.4444.
+0.11111..222222..333..4444
+0.11111..222222...333.4444
+0.11111...222222.333.4444.
+0.11111...222222.333..4444
+0.11111...222222..333.4444
+0.11111....222222.333.4444
+0..11111.222222.333.4444..
+0..11111.222222.333..4444.
+0..11111.222222.333...4444
+0..11111.222222..333.4444.
+0..11111.222222..333..4444
+0..11111.222222...333.4444
+0..11111..222222.333.4444.
+0..11111..222222.333..4444
+0..11111..222222..333.4444
+0..11111...222222.333.4444
+0...11111.222222.333.4444.
+0...11111.222222.333..4444
+0...11111.222222..333.4444
+0...11111..222222.333.4444
+0....11111.222222.333.4444
+.0.11111.222222.333.4444..
+.0.11111.222222.333..4444.
+.0.11111.222222.333...4444
+.0.11111.222222..333.4444.
+.0.11111.222222..333..4444
+.0.11111.222222...333.4444
+.0.11111..222222.333.4444.
+.0.11111..222222.333..4444
+.0.11111..222222..333.4444
+.0.11111...222222.333.4444
+.0..11111.222222.333.4444.
+.0..11111.222222.333..4444
+.0..11111.222222..333.4444
+.0..11111..222222.333.4444
+.0...11111.222222.333.4444
+..0.11111.222222.333.4444.
+..0.11111.222222.333..4444
+..0.11111.222222..333.4444
+..0.11111..222222.333.4444
+..0..11111.222222.333.4444
+...0.11111.222222.333.4444
+
+There appears a pattern here, for each new group added. I will use ampersand to assign "shared".
+2 & 4 means 2 groups share 4
+/\ is the triangle function
+
+/\3 means triangle with base of three.
+
+//\\ is the meta triangle function
+
+//\\5 means /\5+ /\4 + /\3 + /\2 + /\1
+
+I will now explore x = 2, the most basic of the married groups.
+n & x
+1 & 2 = 2
+2 & 2 = /\2 = 3
+3 & 2 = /\2 + n-2 = 4
+4 & 2 = /\2 + n-2 = 5
+5 & 2 = /\2 + n-2 = 6
+6 & 2 = /\2 + n-2 = 7
+7 & 2 = /\2 + n-2 = 8
+
+formula is (n-2)+/\x
+
+for every group added, we count one up on how large the triangle should be.
+n & x
+1 & 3 = 3
+2 & 3 = /\3 = 6
+3 & 3 = /\3+1 = 10
+4 & 3 = /\3+2 = 15
+5 & 3 = /\3+3 = 21
+
+formula is /\(n-2+x)
+
+n & x
+1 & 4 = 4
+2 & 4 = /\4 = 10 = /\3 + /\2 + /\ 1 
+3 & 4 = (2*/\4) = 20 = /\4 + /\3 + /\2 + /\ 1 
+4 & 4 = (2*/\4) + /\4+1 = 35 = /\5 + /\4 + /\3 + /\2 + /\1
+5 & 4 = (2*/\4) + /\4+1 + /\4+2 = 56 /\6 + /\5 + /\4 + /\3 + /\2 + /\1
+
+formula is //\\(n+(x-3))
+
+when x is 4, theres still some sort of n-2 going on. The base 1 & 4 and 2 & 4 holds.
+
+I will explore n & 5 now full written are below
+
+1 & 5 = 5
+2 & 5 = /\5 = 15
+3 & 5 = //\\(n+(x-3)) = 35
+4 & 5 = 
+
+This is the writeout.
+????????????? 1,1,1,1,1
+0.1.2.3.4....
+0.1.2.3..4...
+0.1.2.3...4..
+0.1.2.3....4.
+0.1.2.3.....4
+0.1.2..3.4...
+0.1.2..3..4..
+0.1.2..3...4.
+0.1.2..3....4
+0.1.2...3.4..
+0.1.2...3..4.
+0.1.2...3...4
+0.1.2....3.4.
+0.1.2....3..4
+0.1.2.....3.4
+0.1..2.3.4...
+0.1..2.3..4..
+0.1..2.3...4.
+0.1..2.3....4
+0.1..2..3.4..
+0.1..2..3..4.
+0.1..2..3...4
+0.1..2...3.4.
+0.1..2...3..4
+0.1..2....3.4
+0.1...2.3.4..
+0.1...2.3..4.
+0.1...2.3...4
+0.1...2..3.4.
+0.1...2..3..4
+0.1...2...3.4
+0.1....2.3.4.
+0.1....2.3..4
+0.1....2..3.4
+0.1.....2.3.4
+0..1..2.3.4..
+
+
