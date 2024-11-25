@@ -1,0 +1,50 @@
+2024.11.19
+its getting quite obvious that I'm going to rewrite this whole day once it is up
+and running. This document will track my thoughts on what I think should be done 
+and why.
+
+First of all some minor gripes I want to fix:
+Several functions implements some method to move a group from one location
+to another. This should be separated into its own function(s).
+
+The procedure is simple:
+    Replace groupID at current position with symbols from clean Vector
+    Write groupID into new position
+
+I think one function for each step is the best bet, I know there is
+at least one place in the code where I do two removes in a row, before placing
+the new ID's, this is done to catch an edge case.
+
+Then its decided:
+fn move_group_lift
+fn move_group_place
+
+Needs to happen.
+
+Another semantic fix I want to implement: 
+Let functions accept and return the structs in as many places as possible.
+Right now I'm passing around peices of the structs, and it results really long
+and really ugly function signatures. The structs contains almost all the data
+needed for all functions, and passing around/modifying the core data structure
+should be the default mode. Active indices and other neccesary metadata can 
+easily be passed along with the structs. I hope this will also help enforce
+consistent language across the app. Variables that fill essentially the same
+role in different functions have a range of names. As often as possible 
+role/name relationships should be consistent. As an example:
+counter, count, window and start_index all perform the same role in different
+functions. It count upwards. Sometimes context will take precedence, but it
+should be logical and well thought out.
+
+Id like to have a look at the build_spr_groups function. I'm tempted to
+just shove the spring groups in there without any checks and let the
+unfuckify functions work it out. Needs testing and benchmarking, of course.
+
+I also think the SpringGroup struct should carry one more peice of data:
+Degrees of freedom. Storing this data the first time it appears,  just seems 
+like a cleaner way of doing things.
+
+And last but not least, for now. I want to move as much functionality as
+possible into impl-blocks for the relevant structs. I think this will
+make for better readabilty, and ultimately a cleaner code.
+
+Maybe add a check if group has any freedoms? A lazy freedom_counter, if you will.
