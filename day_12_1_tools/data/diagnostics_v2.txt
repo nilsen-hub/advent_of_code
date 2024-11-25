@@ -1,0 +1,122 @@
+2024.11.25
+
+The last document got a bit cluttered. I now have tools to do quicker
+calculations, so I'm starting over.
+
+Lets restate the problem, the test data is below:
+
+???.### 1,1,3
+.??..??...?##. 1,1,3
+?#?#?#?#?#?#?#? 1,3,1,6
+????.#...#... 4,1,1
+????.######..#####. 1,6,5
+?###???????? 3,2,1
+
+This is solved line by line, one line contains a string and some numbers
+The numbers on the right represents contiguous groups of a size n
+The string on the left is the grid these groups are to be placed into.
+The rules for placing the groups are:
+
+- The groups must appear in the order shown in the numbers on the right.
+- No two groups may be directly next to eachother.
+- '.' in the grid must not be covered.
+- '#' in grid must be covered.
+- '?' may or may not be covered.
+
+Examples:
+
+???.### 1,1,3 = 1
+        0,1,2
+
+0.1.222
+
+.??..??...?##. 1,1,3 = 4
+               0,1,2
+
+.0...1....222.
+.0....1...222.
+..0..1....222.
+..0...1...222. 
+
+?###???????? 3,2,1 = 10
+             0,1,2
+
+.000.11.2...
+.000.11..2..
+.000.11...2.
+.000.11....2
+.000..11.2..
+.000..11..2.
+.000..11...2
+.000...11.2.
+.000...11..2
+.000....11.2   
+
+The task is to figure out how many ways you can put the numbers into the string.
+
+What I have figured out this far.
+
+The individual groups have X amount of "freedoms", at least one.
+Groups with exactly one freedom, regardless of what the other groups are 
+doing are "locked"
+Groups whose freedoms are unaffected by the motion of other groups are "single"
+Groups whose freedoms are 100% affected by the motion of other groups are "married"
+Some groups have both single configurations and married configurations,
+These are "Hybrids"
+
+Locked groups are ignored.
+Single groups are simply multiplied up with the rest of the freedoms.
+Hybrids are mysterious for now.
+Married groups have some connection to triangular numbers.
+Two groups, married to eachother, are considered as one group with the amount of
+freedoms = /\shared freedoms.
+
+Example:
+?###???????? 3,2,1
+
+[0] is locked
+[2] and [1] are married, so [2,1]
+[2,1] shares 4 freedoms, the triangular number of 4 is 10.
+
+The final answer is 1*10 = 10 (the locked group times the married group)
+
+Things get a bit more complicated once we venture into more groups sharing more
+freedoms.
+
+Locked group has one freedom.
+Single groups has more than one freedom.
+2 married groups has the triangular number of shared freedoms freedoms.
+I write that out like this /\base, where shared freedoms are the base
+
+A group looking like this:
+Case {1.1}
+?????????? 1,1,1
+
+has 36 configurations.
+The above conguration will be notated as 2 & 8 from now on. 3 groups sharing 8
+freedoms.
+
+n & x 
+3 & 8
+
+Further notation notes:
+I use /\ to note a triangle. So the triangular number with a base of 8:
+/\8
+
+We will also run into the concept of the meta, or higher order triangle:
+Where /\8 is the sum of 8+7+6+5+4+3+2+1
+The first higher order triangle will look like this (still base of 8):
+2/\8.
+Thats a second order triangle, and you calculate this by adding up the 
+triangular numbers down the list so:
+2/\8 = /\8+/\7+/\6+/\5+/\4+/\3+/\2+/\1
+A third order triangle would be to add all second order triangles together
+and so on..
+
+n & x 
+2 & x = (n-1)/\x 
+3 & x = (n-1)/\x
+4 & 8 = (n-1)/\x
+...
+8 & 32 = (n-1)/\x = 61523748
+
