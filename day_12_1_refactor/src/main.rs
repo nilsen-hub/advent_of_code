@@ -15,21 +15,17 @@ impl Maps {
     fn build_spr_groups(&self) -> Vec<SpringGroup> {
         let mut spring_groups: Vec<SpringGroup> = Vec::with_capacity(8);
         for (index, group) in self.groups.iter().enumerate() {
-            if index == 0 {
-                let spring_group = SpringGroup {
-                    id: index,
-                    size: *group,
-                    start_index: 0,
-                };
-                spring_groups.push(spring_group);
-                continue;
+            let id = index;
+            let size = *group;
+            let mut start_index: usize = 0;
+            if index != 0 {
+                start_index =
+                    spring_groups[index - 1].start_index + spring_groups[index - 1].size + 1;
             }
             let spring_group = SpringGroup {
-                id: index,
-                size: *group,
-                start_index: spring_groups[index - 1].start_index
-                    + spring_groups[index - 1].size
-                    + 1,
+                id,
+                size,
+                start_index,
             };
             spring_groups.push(spring_group);
         }
@@ -66,19 +62,20 @@ impl ConditionMap {
         // define starting group as len - 1
         let last_group = spring_groups.len() - 1;
         let mut active_group = spring_groups[last_group].clone();
-        let mut limit: usize = 0;
         // start loop to move these guys
         'outer: loop {
             // first, step the last group as far to right as possible, edit self
             // and generate arrangement for each step
             let mut group_head = active_group.start_index + active_group.size;
-            limit = bounds;
+            let mut limit = bounds;
             active_group.start_index += 1;
             while group_head < limit {
                 spring_groups[active_group.id] = active_group.clone();
                 self.spring_groups = spring_groups.clone();
                 self.arrangement = self.build_arrangement();
-                output.push(self.arrangement.clone());
+                if self.valid_arrangement() {
+                    output.push(self.arrangement.clone());
+                }
                 //self.spring_map_printer();
                 active_group.start_index += 1;
                 group_head += 1;
@@ -126,12 +123,6 @@ impl ConditionMap {
         }
         output
     }
-    fn spring_map_printer(&self) {
-        for el in &self.arrangement {
-            print!("{}", el);
-        }
-        println!("");
-    }
     fn place_group(&self, group_index: &usize, map: &Vec<char>) -> Vec<char> {
         // Places one spring group into a map, group index says what
         // group should be placed. The
@@ -154,26 +145,30 @@ impl ConditionMap {
         }
         let reference = self.maps.springs.clone();
         for (index, el) in reference.iter().enumerate() {
-            if *el == '.' {
-                if arrangement[index] != '.' {
-                    return false;
-                }
+            if *el == '.' && arrangement[index] != '.' {
+                return false;
             }
         }
 
         true
     }
+    fn spring_map_printer(&self) {
+        for el in &self.arrangement {
+            print!("{}", el);
+        }
+        println!("");
+    }
 }
 fn main() {
     let now = Instant::now();
-    let path = "./data/day12";
+    let path = "./data/day12TT";
     let full_data = get_list_from_file(path);
     let mut value_accumulator: usize = 0;
     for line in full_data {
         value_accumulator += starttup(line);
     }
     println!(
-        "There are a total of {} valid permutations in the data set",
+        "There is a total of {} valid permutation(s) in the data set",
         value_accumulator
     );
     println!("program runtime: {}", now.elapsed().as_micros());
