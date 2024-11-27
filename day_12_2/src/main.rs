@@ -4,10 +4,9 @@ use std::{fs::read_to_string, time::Instant};
 struct SpringGroup {
     id: usize,
     size: usize,
-    start_index: usize,
-    si_freedom: usize,
-    sh_freedom: usize, 
+    start_index: (usize, usize),
 }
+
 #[derive(Debug, Clone)]
 struct Maps {
     springs: Vec<char>,
@@ -20,8 +19,6 @@ impl Maps {
             let id = index;
             let size = *group;
             let mut start_index: usize = 0;
-            let si_freedom = 1;
-            let sh_freedom = 0
             if index != 0 {
                 start_index =
                     spring_groups[index - 1].start_index + spring_groups[index - 1].size + 1;
@@ -30,50 +27,12 @@ impl Maps {
                 id,
                 size,
                 start_index,
-                si_freedom, 
-                sh_freedom, 
             };
             spring_groups.push(spring_group);
         }
         spring_groups
     }
-    fn build_spr_groups(&self) -> Vec<SpringGroup> {
-        // fourth attempt to build a function to make a valid
-        // first definition of spring groups, returns a vector
-        // of spring group structs
-        // The rules for valid spring groups are:
-    
-        // - Groups must appear in order provided
-        // - No groups on '.'
-        // - All '#' must be covered by a group
-        // - '?' can be filled
-        // - No groups may be adjacent to another group
-    
-        let reference = self.springs.clone();
-        let groups = self.groups.clone();
-        let mut working_vector = reference.clone();
-        let mut spring_groups: Vec<SpringGroup> = Vec::with_capacity(8);
-        
-        for (index, group) in groups.iter().enumerate(){
-            // group ID is current index of groups
-            // lets set all known parameters of group
-            let id = index;
-            let size = *group;
-            let si_freedom: usize = 1;
-            let sh_freedom: usize = 0;
-            let mut start_index: usize = 0;
-            // first set the start index of the group
-            if index != 0{
-                start_index = spring_groups[spring_groups.len() - 1].start_index + spring_groups[spring_groups.len() - 1].size + 1;
-            }
-            // define head of the group, this together with the
-            // start index defines a window
-            let mut group_head = start_index + size - 1;
-
-        }
-
-        spring_groups
-    }
+}
 
 #[derive(Debug, Clone)]
 struct ConditionMap {

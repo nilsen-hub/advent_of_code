@@ -23,7 +23,7 @@ struct ConditionMap {
 
 fn main() {
     let now = Instant::now();
-    let path = "./data/day12TT";
+    let path = "./data/day12";
     let full_data = get_list_from_file(path);
     let mut value_accumulator: usize = 0;
     let mut counter = 1;
