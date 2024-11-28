@@ -1,16 +1,15 @@
-use std::{fs::read_to_string, process::Output, time::Instant};
+use std::{fs::read_to_string, time::Instant};
 
 #[derive(Debug, Clone)]
 struct SpringGroup {
     id: usize,
     size: usize,
     start_index: (usize, usize),
-    single: usize,
-    shared: usize, 
 }
 #[derive(Debug, Clone)]
 struct Constellation {
     groups: Vec<SpringGroup>,
+    freedoms: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -63,7 +62,16 @@ impl ConditionMap {
         hashes
     }
     fn get_constellations(&self){
-        let groups        
+        // Function to generate constellations.
+        // A constellation is a configuration of groups within the given fragments
+        // An exhaustive list of constellations are required for an accurate
+        // count of arrangements.
+
+        let groups = self.maps.groups.clone();
+        let fragments = self.fragments.clone();
+        let mut spring_groups: Vec<SpringGroup> = Vec::new();
+        
+
     }
 }
 // impl ConditionMap {
