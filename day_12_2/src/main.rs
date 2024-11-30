@@ -46,7 +46,8 @@ struct ConditionMap {
     maps: Maps,
     constellations: Vec<Constellation>,
     fragments: Vec<Vec<char>>,
-    hashes: Vec<(usize, usize)>
+    hashes: Vec<(usize, usize)>,
+    populated: Vec<Vec<char>>,
 }
 impl ConditionMap {
     fn get_hashes(&self) ->Vec<(usize, usize)> {
@@ -61,18 +62,178 @@ impl ConditionMap {
         }   
         hashes
     }
-    fn get_constellations(&self){
+    fn get_first_constellation(&mut self){
         // Function to generate constellations.
         // A constellation is a configuration of groups within the given fragments
         // An exhaustive list of constellations are required for an accurate
-        // count of arrangements.
+        // count of arrangements. I aspired to doing this mostly by modifying and 
+        // checking numbers, but we will see if we have to do some construction
 
         let groups = self.maps.groups.clone();
         let fragments = self.fragments.clone();
         let mut spring_groups: Vec<SpringGroup> = Vec::new();
-        
+        for el in fragments{
+            println!("{:?}", el);
+        }
+        // Make first constellation by throwing the springgroups into their
+        // first suitable spot.
+        for (index, group) in groups.iter().enumerate(){
+            let start_index = self.get_start_index(group, &spring_groups);
+            let spring_group = SpringGroup{
+                id: index,
+                size: *group,
+                start_index,
+            };
+            spring_groups.push(spring_group.clone());
+        }
+        // build constellation with placeholder freedoms and push it onto self
+        let constellation = Constellation{
+            groups: spring_groups,
+            freedoms: 1,
+        }; 
+
+        self.constellations.push(constellation);
+
+        // Validate constellation, if not valid, fix it
+        if self.valid_constellation() == false{
+            println!("Not a valid constellation");
+            self.constellation_fixer();
+        }
+        self.constellation_printer();
+    }
+    fn constellation_fixer(&mut self){
+        // fixes the cases where one or more hashes are left uncovered by the
+        // naive first placement of groups in a constellation.
+        // works by identifying the closest group to the left of the exposed
+        // hash, and moving it. Checks for adjacency need to be in place aswell
+
+        // first get a list of exposed hashes.
+        let to_fix = self.get_open_hashes();
+        let mut group_to_move: usize = 0;
+
+        // go through list of exposed hashes
+        for fix in to_fix{
+            // identify spring group to the left of hash find the first group with
+            // a start index higher than the hash, and take the group before it.
+            // if last group has start index lower than hash, that group needs to move
+            let start_index_last_group = self.constellations[0].groups[self.constellations[0].groups.len() - 1].start_index;
+            if start_index_last_group.0 <= fix.0 && start_index_last_group.1 < fix.1{
+                group_to_move = self.constellations[0].groups[self.constellations[0].groups.len() - 1];
+            } else{
+                for (index, group) in self.constellations[0].groups.iter().enumerate(){
+                 let start_index = group.start_index;
+                 if start_index.0 >= fix && start_index.1 > fix.1{
+                    group_to_move = self.constellations[0].groups[index - 1];
+                 }
+                }
+            }
+        }
 
     }
+    fn get_open_hashes(&self) -> Vec<(usize, usize)>{
+        let mut output: Vec<(usize, usize)> = Vec::with_capacity(16);
+        for hash in &self.hashes{
+            let  mut check = false;
+            for spring_group in &self.constellations[0].groups{
+                let start = spring_group.start_index;
+                let coverage = start.1 + spring_group.size - 1;
+                // println!("start: {:?}  coverage: {}  hash: {:?}", start, coverage, hash);
+                if hash.0 != start.0{
+                    continue;
+                }
+                if start.1 <= hash.1 && coverage >= hash.1{
+                    // println!("its true!");
+                    check = true;
+                }
+            }
+            if check == false{
+                output.push(*hash);
+            }
+        }
+        output
+    }
+    fn constellation_printer(&mut self){
+
+        for (index, el) in self.constellations.clone().iter().enumerate(){
+            for group in el.groups.clone(){
+                self.place_group(group.id, index);
+            }
+        }
+        for el in &self.populated{
+            for char in el{
+                print!("{}", char);
+            }
+            print!("  ");
+        }
+        println!("");
+
+    }
+    fn place_group(&mut self, group_id: usize, constellation_number: usize){
+        
+        let mut fragments = self.populated.clone();
+        let mut size = self.constellations[constellation_number].groups[group_id].size;
+        
+        while size > 0{
+            let placement_index = self.constellations[constellation_number].groups[group_id].start_index.1 + size - 1;
+            let fragment = self.constellations[constellation_number].groups[group_id].start_index.0;
+            fragments[fragment][placement_index] = 'X';
+            size -= 1;
+        }
+
+        self.populated = fragments.clone();
+    }
+    fn valid_constellation(&self) -> bool{
+        for hash in &self.hashes{
+            let  mut output = false;
+            for spring_group in &self.constellations[0].groups{
+                let start = spring_group.start_index;
+                let coverage = start.1 + spring_group.size - 1;
+                // println!("start: {:?}  coverage: {}  hash: {:?}", start, coverage, hash);
+                if hash.0 != start.0{
+                    continue;
+                }
+                if start.1 <= hash.1 && coverage >= hash.1{
+                    // println!("its true!");
+                    output = true;
+                }
+            }
+            if output == false{
+                return false
+            }
+        }
+
+        return true
+    }
+    fn get_start_index(&self, group: &usize, spring_groups:&Vec<SpringGroup>) ->(usize, usize) {
+        // gets starting index for a group
+        let spring_groups = spring_groups.clone();
+        let mut output: (usize, usize) = (0,0);
+        let mut fragment_counter: usize = 0;
+        let mut cell_counter: usize = 0;
+        let fragments = self.fragments.clone();
+        
+        // sets counters to engage after last placed group.
+        if spring_groups.len() > 0{
+            let last_group = spring_groups[spring_groups.len() - 1].clone();
+            (fragment_counter, cell_counter) = last_group.start_index;
+            cell_counter += last_group.size + 1;
+        }
+        'fragments_loop: loop{
+            let fragment = fragments[fragment_counter].clone();
+            loop{
+                let group_counter = cell_counter + group - 1;
+                if group_counter >= fragment.len(){
+                    break;
+                }
+                output = (fragment_counter, cell_counter);
+                break 'fragments_loop;
+            }
+            cell_counter = 0;
+            fragment_counter += 1;
+        }
+        output
+    }
+
 }
 // impl ConditionMap {
 //     fn build_arrangement(&self) -> Vec<char> {
@@ -219,14 +380,17 @@ fn starttup(line: String) -> usize {
     let maps = Maps { springs, groups };
     let fragments = maps.get_fragments();
     let constellations:Vec<Constellation> = Vec::new();
-    let hashes: Vec<(usize, usize)> = Vec::new(); 
+    let hashes: Vec<(usize, usize)> = Vec::new();
+    let populated = fragments.clone(); 
     let mut condition_map = ConditionMap {
         maps,
         constellations,
         fragments,
         hashes,
+        populated,
     };
     condition_map.hashes = condition_map.get_hashes();
+    condition_map.get_first_constellation();
 
 
     output
