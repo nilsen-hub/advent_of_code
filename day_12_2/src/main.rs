@@ -108,27 +108,86 @@ impl ConditionMap {
         // hash, and moving it. Checks for adjacency need to be in place aswell
 
         // first get a list of exposed hashes.
-        let to_fix = self.get_open_hashes();
+        let mut to_fix = self.get_open_hashes();
+        // reverse list to start with highest index first, to avoid potential chaos
+        to_fix.reverse();
         let mut group_to_move: usize = 0;
-
+        println!("{:?}", to_fix);
         // go through list of exposed hashes
-        for fix in to_fix{
+        'master_loop: for fix in to_fix{
             // identify spring group to the left of hash find the first group with
             // a start index higher than the hash, and take the group before it.
-            // if last group has start index lower than hash, that group needs to move
+            // if last group has start index lower than hash, that group needs to move, so we check for that first
             let start_index_last_group = self.constellations[0].groups[self.constellations[0].groups.len() - 1].start_index;
-            if start_index_last_group.0 <= fix.0 && start_index_last_group.1 < fix.1{
-                group_to_move = self.constellations[0].groups[self.constellations[0].groups.len() - 1];
-            } else{
-                for (index, group) in self.constellations[0].groups.iter().enumerate(){
-                 let start_index = group.start_index;
-                 if start_index.0 >= fix && start_index.1 > fix.1{
-                    group_to_move = self.constellations[0].groups[index - 1];
-                 }
+            println!("start index last group: {:?}", start_index_last_group);
+            println!("needs to be fixed: {:?}", fix);
+            if start_index_last_group.0 >= fix.0{
+                if start_index_last_group.0 <= fix.0 && start_index_last_group.1 < fix.1{
+                    group_to_move = self.constellations[0].groups[self.constellations[0].groups.len() - 1].id;
+                } else{
+                    println!("were in else now..");
+                    for (index, group) in self.constellations[0].groups.iter().enumerate(){
+                     let start_index = group.start_index;
+                     if start_index.0 >= fix.0 && start_index.1 > fix.1{
+                        group_to_move = self.constellations[0].groups[index - 1].id;
+                     }
+                    }
                 }
+            }else{
+                group_to_move = self.constellations[0].groups[self.constellations[0].groups.len() - 1].id;
             }
+
+            println!("Active group start index: {:?}", self.constellations[0].groups[group_to_move]);
+            // println!("group to move: {:?}", group_to_move);
+            // Check if fragment has room for group
+            if self.has_room_for_group(group_to_move, fix) == false{
+                println!("No room!");
+                if group_to_move == self.constellations[0].groups.len() - 1{
+                    let mut count = fix.0 + 1;
+                    loop {
+                        if self.fragments[count].len() >= self.constellations[0].groups[group_to_move].size{
+                            self.constellations[0].groups[group_to_move].start_index = (count, 0);
+                            self.constellation_fixer();
+                            if self.valid_constellation(){
+                                break 'master_loop;
+                            }
+                        }
+                        count += 1;
+                    }
+
+                } else {
+                    loop {
+                        //let possible_new_start_index = self.find_next_possible_position(group_to_move, fix);
+                    }
+                }
+
+            }
+            println!("There is room!");
+            self.move_group(group_to_move, fix);
         }
 
+    }
+    //fn find_next_possible_position(&self, group_id: usize, target:(usize, usize)) -> (usize, usize) {
+    //    let active_group = self.constellations[0].groups[group_id].clone();
+    //    let fragments = self.fragments.clone();
+    //    let mut frag_count: usize = target.0 + 1;
+    //    
+//
+    //}
+    fn has_room_for_group(&self, group_id: usize, target:(usize, usize)) -> bool {
+        // checks if fragment is large enough for spring group
+        let active_group =  self.constellations[0].groups[group_id].clone();
+        if self.fragments[target.0].len() < active_group.size{
+            return false
+        }
+        true
+    }
+    fn move_group(&mut self, group_id: usize, target:(usize, usize)){
+        // updates group to cover target index, will also do adjacency checks
+        // and call itself recuresively to fix any errors.
+        let active_group = self.constellations[0].groups[group_id].clone();
+        let fragment = target.0;
+        self.constellations[0].groups[group_id].start_index = (fragment, target.1 + 1 - active_group.size);
     }
     fn get_open_hashes(&self) -> Vec<(usize, usize)>{
         let mut output: Vec<(usize, usize)> = Vec::with_capacity(16);

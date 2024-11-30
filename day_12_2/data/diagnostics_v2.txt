@@ -234,4 +234,15 @@ Lets do another!
 
 ???#???.???????#?? 1,2,1,3,4,1
     ???#???.???????#??
-c1: 0.11.2.-333.4444.5 = 3 possible solutions  
+c1: 0.11.2.-333.4444.5 = 4 possible solutions 
+
+So, the algo must go something like this.
+
+A . or a series of ... delimits static fragments
+A # or a series of ### delimits dynamic fragments
+
+The program takes the spring map and cuts into chunks based on the dots
+And sticks the for now empty groups into  a vector of the fragments (also vectors).
+
+???#???......???????#?? 1,2,1,3,4,1
+0.11.2.      333.4444.1

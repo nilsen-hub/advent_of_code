@@ -56,16 +56,25 @@ impl ConditionMap {
         let bounds = self.maps.springs.len();
         let last_group = spring_groups.len() - 1;
         let mut active_group = spring_groups[last_group].clone();
+        let mut counter: usize = 0;
+        let mut metacounter: usize = 0;
         'outer: loop {
+            counter += 1;
             let mut group_head = active_group.start_index + active_group.size;
             let mut limit = bounds;
             active_group.start_index += 1;
             while group_head < limit {
+                counter += 1;
                 spring_groups[active_group.id] = active_group.clone();
                 self.spring_groups = spring_groups.clone();
                 self.arrangement = self.build_arrangement();
                 if self.valid_arrangement() {
                     output.push(self.arrangement.clone());
+                    //if counter == 10_000_000{
+                    //    metacounter += 1;
+                    //    counter = 0;
+                    //    println!("ten million iterations times {}", metacounter);
+                    //}
                 }
                 active_group.start_index += 1;
                 group_head += 1;

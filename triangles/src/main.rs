@@ -25,9 +25,9 @@ fn main() {
 fn get_n_order_triangle() {
     // base:usize, order: usize
     // -> usize
-    let mut order: usize = 2;
+    let mut order: usize = 4;
     let order_const: usize = order;
-    let base: usize = 6;
+    let base: usize = 7;
     println!("setup complete");
     let mut source: Vec<usize> = (1..base + 1).collect();
     let mut target: Vec<usize> = Vec::with_capacity(base);
